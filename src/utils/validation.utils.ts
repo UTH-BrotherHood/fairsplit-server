@@ -2,9 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { validationResult, ValidationChain } from 'express-validator'
 import { EntityError, ErrorWithStatus } from './error.utils'
 import httpStatusCode from '~/core/statusCodes'
-// import { RunnableValidationChains } from 'express-validator/lib/middlewares/schema'
 
-// sequential processing, stops running validations chain if the previous one fails.
 export const validate = (validations: ValidationChain[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     for (const validation of validations) {
