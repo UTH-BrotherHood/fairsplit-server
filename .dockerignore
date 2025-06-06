@@ -1,0 +1,24 @@
+# Environment variables
+.env
+.env.*
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Logs
+*.log
+
+# IDE specific files
+.vscode/
+.idea/
+
+npm-debug.log
+.git
+.github
+.gitignore
+.DS_Store
+*.md
+!README.md 
