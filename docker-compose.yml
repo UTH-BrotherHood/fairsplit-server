@@ -26,9 +26,9 @@ services:
       - node_modules:/app/node_modules
     healthcheck:
       test: ['CMD', 'wget', '--spider', 'http://localhost:8080/api/v1/health']
-      interval: 30s
+      interval: 120s
       timeout: 10s
-      retries: 3
+      retries: 5
 
   redis:
     image: redis:alpine
