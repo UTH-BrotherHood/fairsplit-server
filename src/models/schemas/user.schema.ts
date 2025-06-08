@@ -23,7 +23,6 @@ export interface IUser {
   dateOfBirth: Date
   verify: UserVerificationStatus
   verificationType: UserVerificationType
-  role: string
   google?: {
     googleId: string
   }
@@ -48,7 +47,6 @@ export class User implements IUser {
   avatarUrl?: string
   verify: UserVerificationStatus
   verificationType: UserVerificationType
-  role: string
   google?: {
     googleId: string
   }
@@ -71,7 +69,6 @@ export class User implements IUser {
     avatarUrl,
     verify = UserVerificationStatus.Unverified,
     verificationType,
-    role = 'User',
     google,
     facebook,
     twitter,
@@ -87,7 +84,6 @@ export class User implements IUser {
     avatarUrl?: string
     verify?: UserVerificationStatus
     verificationType: UserVerificationType
-    role?: string
     google?: {
       googleId: string
     }
@@ -109,7 +105,6 @@ export class User implements IUser {
     this.avatarUrl = avatarUrl
     this.verify = verify
     this.verificationType = verificationType
-    this.role = role
     this.google = google
     this.facebook = facebook
     this.twitter = twitter

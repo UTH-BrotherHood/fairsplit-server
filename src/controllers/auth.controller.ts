@@ -82,8 +82,8 @@ class AuthController {
 
   async refreshToken(req: Request, res: Response) {
     const { refreshToken } = req.body
-    const { userId, verify, role } = req.decodedRefreshToken as TokenPayload
-    const result = await authService.refreshToken({ userId, verify, role, refreshToken })
+    const { userId, verify } = req.decodedRefreshToken as TokenPayload
+    const result = await authService.refreshToken({ userId, verify, refreshToken })
     return new OK({
       message: USER_MESSAGES.REFRESH_TOKEN_SUCCESSFULLY,
       data: result

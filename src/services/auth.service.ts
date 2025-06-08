@@ -20,13 +20,12 @@ import { VerificationCode, VerificationCodeType } from '~/models/schemas/verific
 import smsService from './sms.service'
 
 class AuthService {
-  private signAccessToken({ userId, verify, role }: { userId: string; verify: UserVerificationStatus; role: string }) {
+  private signAccessToken({ userId, verify }: { userId: string; verify: UserVerificationStatus }) {
     return signToken({
       payload: {
         userId,
         tokenType: TokenType.AccessToken,
-        verify,
-        role
+        verify
       },
       privateKey: envConfig.jwtSecretAccessToken,
       options: {
@@ -35,24 +34,13 @@ class AuthService {
     })
   }
 
-  private signRefreshToken({
-    userId,
-    verify,
-    role,
-    exp
-  }: {
-    userId: string
-    verify: UserVerificationStatus
-    role: string
-    exp?: number
-  }) {
+  private signRefreshToken({ userId, verify, exp }: { userId: string; verify: UserVerificationStatus; exp?: number }) {
     if (exp) {
       return signToken({
         payload: {
           userId,
           tokenType: TokenType.RefreshToken,
           verify,
-          role,
           exp
         },
         privateKey: envConfig.jwtSecretRefreshToken,
@@ -65,44 +53,13 @@ class AuthService {
       payload: {
         userId,
         tokenType: TokenType.RefreshToken,
-        verify,
-        role
+        verify
       },
       privateKey: envConfig.jwtSecretRefreshToken,
       options: {
         expiresIn: envConfig.refreshTokenExpiresIn
       }
     })
-  }
-
-  private signEmailVerifyToken({
-    userId,
-    verify,
-    role
-  }: {
-    userId: string
-    verify: UserVerificationStatus
-    role: string
-  }) {
-    return signToken({
-      payload: {
-        userId,
-        tokenType: TokenType.EmailVerificationToken,
-        verify,
-        role
-      },
-      privateKey: envConfig.jwtSecretEmailVerifyToken,
-      options: {
-        expiresIn: envConfig.emailVerifyTokenExpiresIn
-      }
-    })
-  }
-
-  private async decodeEmailVerifyToken(emailVerifyToken: string) {
-    return (await verifyToken({
-      token: emailVerifyToken,
-      secretOrPublickey: envConfig.jwtSecretEmailVerifyToken
-    })) as TokenPayload
   }
 
   async decodeRefreshToken(refreshToken: string) {
@@ -112,19 +69,8 @@ class AuthService {
     })) as TokenPayload
   }
 
-  async signAccessAndRefreshToken({
-    userId,
-    verify,
-    role
-  }: {
-    userId: string
-    verify: UserVerificationStatus
-    role: string
-  }) {
-    return Promise.all([
-      this.signAccessToken({ userId, verify, role }),
-      this.signRefreshToken({ userId, verify, role })
-    ])
+  async signAccessAndRefreshToken({ userId, verify }: { userId: string; verify: UserVerificationStatus }) {
+    return Promise.all([this.signAccessToken({ userId, verify }), this.signRefreshToken({ userId, verify })])
   }
 
   async register(payload: RegisterReqBody) {
@@ -217,8 +163,7 @@ class AuthService {
 
     const [accessToken, refreshToken] = await this.signAccessAndRefreshToken({
       userId: user._id.toString(),
-      verify: user.verify,
-      role: user.role
+      verify: user.verify
     })
 
     await databaseServices.users.updateOne(
@@ -300,8 +245,7 @@ class AuthService {
 
     const [accessToken, refreshToken] = await this.signAccessAndRefreshToken({
       userId: updatedUser._id.toString(),
-      verify: UserVerificationStatus.Verified, // Luôn sử dụng Verified cho Google login
-      role: updatedUser.role || 'user'
+      verify: UserVerificationStatus.Verified // Luôn sử dụng Verified cho Google login
     })
 
     await databaseServices.tokens.deleteMany({
@@ -313,7 +257,7 @@ class AuthService {
 
     await databaseServices.tokens.insertOne(
       new Token({
-        userId: updatedUser._id.toString(),
+        userId: new ObjectId(updatedUser._id.toString()),
         token: refreshToken,
         type: TokenType.RefreshToken,
         expiresAt: new Date((exp as number) * 1000)
@@ -398,12 +342,10 @@ class AuthService {
   async refreshToken({
     userId,
     verify,
-    role,
     refreshToken
   }: {
     userId: string
     verify: UserVerificationStatus
-    role: string
     refreshToken: string
   }) {
     logger.info('Refreshing token', 'AuthService.refreshToken', '', { userId })
@@ -496,8 +438,7 @@ class AuthService {
     // Generate new tokens only after successful blacklisting
     const [accessToken, newRefreshToken] = await this.signAccessAndRefreshToken({
       userId,
-      verify,
-      role
+      verify
     })
 
     const { exp: newExpRefreshToken } = await this.decodeRefreshToken(newRefreshToken)
@@ -537,250 +478,6 @@ class AuthService {
       user: userResponse
     }
   }
-
-  // async verifyEmail(emailVerifyToken: string) {
-  //   const decodedEmailVerifyToken = await this.decodeEmailVerifyToken(emailVerifyToken)
-  //   const { userId } = decodedEmailVerifyToken
-
-  //   logger.info('Verifying email', 'AuthService.verifyEmail', '', { userId })
-
-  //   const user = await databaseServices.users.findOne({ _id: new ObjectId(userId) })
-  //   if (!user) {
-  //     logger.error('User not found during email verification', 'AuthService.verifyEmail', '', { userId })
-  //     throw new ErrorWithStatus({
-  //       status: httpStatusCode.NOT_FOUND,
-  //       message: USER_MESSAGES.USER_NOT_FOUND
-  //     })
-  //   }
-
-  //   if (user.verify === UserVerificationStatus.Verified) {
-  //     logger.warn('Email already verified', 'AuthService.verifyEmail', '', {
-  //       userId,
-  //       email: user.email
-  //     })
-  //     throw new ErrorWithStatus({
-  //       status: httpStatusCode.BAD_REQUEST,
-  //       message: USER_MESSAGES.EMAIL_ALREADY_VERIFIED
-  //     })
-  //   }
-
-  //   const tokenInDB = await databaseServices.tokens.findOne({
-  //     token: emailVerifyToken,
-  //     userId: new ObjectId(userId),
-  //     type: TokenType.EmailVerificationToken
-  //   })
-
-  //   if (!tokenInDB) {
-  //     logger.error('Verification token not found', 'AuthService.verifyEmail', '', { userId })
-  //     throw new ErrorWithStatus({
-  //       status: httpStatusCode.UNAUTHORIZED,
-  //       message: TOKEN_MESSAGES.TOKEN_NOT_FOUND
-  //     })
-  //   }
-
-  //   if (tokenInDB.expiresAt.getTime() < Date.now()) {
-  //     logger.error('Verification token expired', 'AuthService.verifyEmail', '', {
-  //       userId,
-  //       expiry: tokenInDB.expiresAt.toISOString()
-  //     })
-  //     throw new ErrorWithStatus({
-  //       status: httpStatusCode.UNAUTHORIZED,
-  //       message: TOKEN_MESSAGES.TOKEN_IS_EXPIRED
-  //     })
-  //   }
-
-  //   await Promise.all([
-  //     databaseServices.users.updateOne(
-  //       { _id: new ObjectId(userId) },
-  //       {
-  //         $set: {
-  //           verify: UserVerificationStatus.Verified,
-  //           updatedAt: new Date()
-  //         }
-  //       }
-  //     ),
-  //     databaseServices.tokens.deleteOne({ _id: tokenInDB._id }),
-  //     databaseServices.tokens.deleteMany({
-  //       userId: new ObjectId(userId),
-  //       type: TokenType.RefreshToken
-  //     })
-  //   ])
-
-  //   const [accessToken, refreshToken] = await this.signAccessAndRefreshToken({
-  //     userId,
-  //     verify: UserVerificationStatus.Verified,
-  //     role: user.role
-  //   })
-
-  //   const { exp } = await this.decodeRefreshToken(refreshToken)
-
-  //   await databaseServices.tokens.insertOne(
-  //     new Token({
-  //       userId: new ObjectId(userId),
-  //       token: refreshToken,
-  //       type: TokenType.RefreshToken,
-  //       expiresAt: new Date((exp as number) * 1000)
-  //     })
-  //   )
-
-  //   const userResponse = excludeSensitiveFields(user)
-
-  //   // Update user in Redis cache
-  //   const redis = await redisClient
-  //   await redis.setObject(`user:${userId}`, userResponse, 1800)
-
-  //   logger.info('Email verified successfully', 'AuthService.verifyEmail', '', {
-  //     userId,
-  //     email: user.email
-  //   })
-
-  //   return {
-  //     accessToken,
-  //     refreshToken,
-  //     user: userResponse
-  //   }
-  // }
-
-  // async resendVerificationEmail(email: string) {
-  //   logger.info('Resending verification email', 'AuthService.resendVerificationEmail', '', { email })
-
-  //   const user = await databaseServices.users.findOne({ email })
-
-  //   if (!user) {
-  //     logger.error('User not found during resend verification', 'AuthService.resendVerificationEmail', '', { email })
-  //     throw new ErrorWithStatus({
-  //       status: httpStatusCode.NOT_FOUND,
-  //       message: USER_MESSAGES.EMAIL_NOT_FOUND
-  //     })
-  //   }
-
-  //   if (user.verify === UserVerificationStatus.Verified) {
-  //     logger.warn('Email already verified', 'AuthService.resendVerificationEmail', '', {
-  //       email,
-  //       userId: user._id?.toString()
-  //     })
-  //     throw new ErrorWithStatus({
-  //       status: httpStatusCode.BAD_REQUEST,
-  //       message: USER_MESSAGES.EMAIL_ALREADY_VERIFIED
-  //     })
-  //   }
-
-  //   const existingTokens = await databaseServices.tokens
-  //     .find({
-  //       userId: user._id,
-  //       type: TokenType.EmailVerificationToken
-  //     })
-  //     .toArray()
-
-  //   if (existingTokens.length > 0) {
-  //     const redis = await redisClient
-  //     const THIRTY_DAYS_IN_SECONDS = 30 * 24 * 60 * 60 // 30 days in seconds
-
-  //     try {
-  //       await Promise.all(
-  //         existingTokens.map(async (token) => {
-  //           const blacklistKey = `blacklist:token:${token.token}`
-  //           const result = await redis.setObject(
-  //             blacklistKey,
-  //             {
-  //               token: token.token,
-  //               userId: user._id?.toString(),
-  //               type: TokenType.EmailVerificationToken,
-  //               blacklistedAt: new Date().toISOString()
-  //             },
-  //             THIRTY_DAYS_IN_SECONDS
-  //           )
-
-  //           if (!result) {
-  //             throw new Error('Failed to set blacklist in Redis')
-  //           }
-
-  //           logger.info('Old verification token blacklisted', 'AuthService.resendVerificationEmail', '', {
-  //             email,
-  //             userId: user._id?.toString(),
-  //             tokenId: token._id.toString(),
-  //             blacklistKey
-  //           })
-  //         })
-  //       )
-  //     } catch (error) {
-  //       logger.error('Failed to blacklist old verification tokens', 'AuthService.resendVerificationEmail', '', {
-  //         email,
-  //         userId: user._id?.toString(),
-  //         error: error instanceof Error ? error.message : 'Unknown error'
-  //       })
-  //       throw new ErrorWithStatus({
-  //         status: httpStatusCode.INTERNAL_SERVER_ERROR,
-  //         message: TOKEN_MESSAGES.TOKEN_BLACKLIST_FAILED
-  //       })
-  //     }
-  //   }
-
-  //   try {
-  //     await databaseServices.tokens.deleteMany({
-  //       userId: user._id,
-  //       type: TokenType.EmailVerificationToken
-  //     })
-  //     logger.info('Old verification tokens deleted from database', 'AuthService.resendVerificationEmail', '', {
-  //       email,
-  //       userId: user._id?.toString()
-  //     })
-  //   } catch (error) {
-  //     logger.error(
-  //       'Failed to delete old verification tokens from database',
-  //       'AuthService.resendVerificationEmail',
-  //       '',
-  //       {
-  //         email,
-  //         userId: user._id?.toString(),
-  //         error: error instanceof Error ? error.message : 'Unknown error'
-  //       }
-  //     )
-  //   }
-
-  //   const emailVerifyToken = await this.signEmailVerifyToken({
-  //     userId: user._id.toString(),
-  //     verify: UserVerificationStatus.Unverified,
-  //     role: user.role
-  //   })
-
-  //   const { iat, exp } = await this.decodeEmailVerifyToken(emailVerifyToken)
-
-  //   try {
-  //     await databaseServices.tokens.insertOne(
-  //       new Token({
-  //         userId: user._id,
-  //         token: emailVerifyToken,
-  //         type: TokenType.EmailVerificationToken,
-  //         expiresAt: new Date((exp as number) * 1000),
-  //         createdAt: new Date((iat as number) * 1000)
-  //       })
-  //     )
-  //     logger.info('New verification token stored in database', 'AuthService.resendVerificationEmail', '', {
-  //       email,
-  //       userId: user._id?.toString()
-  //     })
-  //   } catch (error) {
-  //     logger.error('Failed to store new verification token', 'AuthService.resendVerificationEmail', '', {
-  //       email,
-  //       userId: user._id?.toString(),
-  //       error: error instanceof Error ? error.message : 'Unknown error'
-  //     })
-  //     throw new ErrorWithStatus({
-  //       status: httpStatusCode.INTERNAL_SERVER_ERROR,
-  //       message: TOKEN_MESSAGES.TOKEN_CREATION_FAILED
-  //     })
-  //   }
-
-  //   await emailService.sendVerificationCode(user.email as string, user.username as string, emailVerifyToken)
-
-  //   logger.info('Verification email resent successfully', 'AuthService.resendVerificationEmail', '', {
-  //     email,
-  //     userId: user._id?.toString()
-  //   })
-
-  //   return true
-  // }
 
   async verifyEmail(userId: string, code: string) {
     // Find verification code
