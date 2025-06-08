@@ -15,7 +15,6 @@ export interface IToken {
   type: TokenType
   expiresAt: Date
   createdAt: Date
-  isRevoked?: boolean
 }
 
 export class Token implements IToken {
@@ -25,29 +24,25 @@ export class Token implements IToken {
   type: TokenType
   expiresAt: Date
   createdAt: Date
-  isRevoked?: boolean
 
   constructor({
     userId,
     token,
     type,
     expiresAt,
-    createdAt = new Date(),
-    isRevoked = false
+    createdAt = new Date()
   }: {
     userId: ObjectId | string
     token: string
     type: TokenType
     expiresAt: Date
     createdAt?: Date
-    isRevoked?: boolean
   }) {
     this.userId = typeof userId === 'string' ? new ObjectId(userId) : userId
     this.token = token
     this.type = type
     this.expiresAt = expiresAt
     this.createdAt = createdAt
-    this.isRevoked = isRevoked
   }
 }
 export const TokenModel = {
@@ -77,11 +72,6 @@ export const TokenModel = {
       createdAt: {
         bsonType: 'date',
         description: 'When this token was created'
-      },
-      isRevoked: {
-        bsonType: 'bool',
-        description: 'Whether this token has been revoked',
-        default: false
       }
     }
   },
