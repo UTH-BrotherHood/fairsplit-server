@@ -1,0 +1,52 @@
+import { logger } from '~/loggers/my-logger.log'
+
+export interface ISMSProvider {
+  sendSMS(to: string, message: string): Promise<boolean>
+}
+
+// Mock SMS provider for development
+class MockSMSProvider implements ISMSProvider {
+  async sendSMS(to: string, message: string): Promise<boolean> {
+    logger.info('Mock SMS sent', 'MockSMSProvider.sendSMS', '', {
+      to,
+      message
+    })
+    return true
+  }
+}
+
+class SMSService {
+  private provider: ISMSProvider
+
+  constructor(provider: ISMSProvider = new MockSMSProvider()) {
+    this.provider = provider
+  }
+
+  async sendVerificationCode(phone: string, code: string): Promise<boolean> {
+    try {
+      const message = `Your verification code is: ${code}. This code will expire in 5 minutes.`
+      const result = await this.provider.sendSMS(phone, message)
+
+      if (result) {
+        logger.info('Verification SMS sent successfully', 'SMSService.sendVerificationCode', '', {
+          phone
+        })
+      } else {
+        logger.error('Failed to send verification SMS', 'SMSService.sendVerificationCode', '', {
+          phone
+        })
+      }
+
+      return result
+    } catch (error) {
+      logger.error('Error sending verification SMS', 'SMSService.sendVerificationCode', '', {
+        phone,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      return false
+    }
+  }
+}
+
+const smsService = new SMSService()
+export default smsService
