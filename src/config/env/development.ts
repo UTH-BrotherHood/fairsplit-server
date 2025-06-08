@@ -75,6 +75,7 @@ export const envConfig = {
   // Collections
   dbUserCollection: process.env.DB_USER_COLLECTION as string,
   dbTokenCollection: process.env.DB_TOKEN_COLLECTION as string,
+  dbVerificationCodeCollection: process.env.DB_VERIFICATION_CODE_COLLECTION as string,
   dbCategoryCollection: process.env.DB_CATEGORY_COLLECTION as string,
   dbNotificationCollection: process.env.DB_NOTIFICATION_COLLECTION as string,
   dbUserAnalyticsCollection: process.env.DB_USER_ANALYTICS_COLLECTION as string,
