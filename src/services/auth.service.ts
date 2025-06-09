@@ -12,7 +12,7 @@ import redisClient from '~/config/redis'
 import { logger } from '~/loggers/my-logger.log'
 import emailService from './email.service'
 import { RegisterReqBody, LoginReqBody, TokenPayload, ForgotPasswordReqBody } from '~/models/requests/user.requests'
-import { excludeSensitiveFields } from '~/utils/user.utils'
+import { excludeSensitiveFields, updateUserAndCache } from '~/utils/user.utils'
 import { TokenType, Token } from '~/models/schemas/token.schema'
 import { comparePassword, hashPassword } from '~/utils/crypto'
 import { generateVerificationCode } from '~/utils/verification'
@@ -566,6 +566,8 @@ class AuthService {
         status: httpStatusCode.NOT_FOUND
       })
     }
+
+    await updateUserAndCache(userId, { verify: UserVerificationStatus.Verified })
 
     // Mark verification code as used
     await databaseServices.verificationCodes.updateOne(
