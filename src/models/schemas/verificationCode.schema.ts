@@ -3,6 +3,7 @@ import envConfig from '~/config/env'
 
 export enum VerificationCodeType {
   EmailVerification = 'EmailVerification',
+  PhoneVerification = 'PhoneVerification',
   PasswordReset = 'PasswordReset'
 }
 

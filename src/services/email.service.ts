@@ -53,7 +53,7 @@ class EmailService {
         return this.emailTemplateCache[templateName]
       }
 
-      const templatePath = path.join(__dirname, '../templates/emails', `${templateName}.html`)
+      const templatePath = path.join(__dirname, '../mailer/templates', `${templateName}.html`)
       const readFile = promisify(fs.readFile)
 
       try {
