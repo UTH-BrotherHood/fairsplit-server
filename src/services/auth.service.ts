@@ -307,12 +307,39 @@ class AuthService {
     logger.info('User logging out', 'AuthService.logout', '', { userId })
 
     const redis = await redisClient
+    const THIRTY_DAYS_IN_SECONDS = 30 * 24 * 60 * 60 // 30 days in seconds
 
-    const expiryTime =
-      typeof envConfig.refreshTokenExpiresIn === 'string'
-        ? parseInt(envConfig.refreshTokenExpiresIn)
-        : envConfig.refreshTokenExpiresIn
-    await redis.setObject(`bl_${refreshToken}`, { token: refreshToken }, expiryTime)
+    try {
+      const blacklistKey = `blacklist:token:${refreshToken}`
+      const result = await redis.setObject(
+        blacklistKey,
+        {
+          token: refreshToken,
+          userId,
+          type: TokenType.RefreshToken,
+          blacklistedAt: new Date().toISOString()
+        },
+        THIRTY_DAYS_IN_SECONDS
+      )
+
+      if (!result) {
+        throw new Error('Failed to set blacklist in Redis')
+      }
+
+      logger.info('Refresh token blacklisted successfully', 'AuthService.logout', '', {
+        userId,
+        blacklistKey
+      })
+    } catch (error) {
+      logger.error('Failed to blacklist refresh token', 'AuthService.logout', '', {
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+      throw new ErrorWithStatus({
+        status: httpStatusCode.INTERNAL_SERVER_ERROR,
+        message: TOKEN_MESSAGES.TOKEN_BLACKLIST_FAILED
+      })
+    }
 
     // Remove user from Redis cache
     await redis.del(`user:${userId}`)
