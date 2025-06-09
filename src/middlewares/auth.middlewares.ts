@@ -10,6 +10,7 @@ import { UserVerificationType } from '~/models/schemas/user.schema'
 import { TokenPayload } from '~/models/requests/user.requests'
 import { TokenType } from '~/models/schemas/token.schema'
 import redisClient from '~/config/redis'
+import envConfig from '~/config/env'
 
 const usernameSchema: ParamSchema = {
   notEmpty: {
@@ -372,7 +373,7 @@ export const accessTokenValidation = validate(
           try {
             const decodedAuthorization = await verifyToken({
               token: access_token,
-              secretOrPublickey: process.env.JWT_SECRET_ACCESS_TOKEN as string
+              secretOrPublickey: envConfig.jwtSecretAccessToken
             })
             req.decodedAuthorization = decodedAuthorization as TokenPayload
           } catch (error) {
@@ -415,7 +416,7 @@ export const refreshTokenValidation = validate(
             }
 
             const [decodedRefreshToken, refreshToken] = await Promise.all([
-              verifyToken({ token: value, secretOrPublickey: process.env.JWT_SECRET_REFRESH_TOKEN as string }),
+              verifyToken({ token: value, secretOrPublickey: envConfig.jwtSecretRefreshToken }),
               databaseServices.tokens.findOne({ token: value, type: TokenType.RefreshToken })
             ])
 

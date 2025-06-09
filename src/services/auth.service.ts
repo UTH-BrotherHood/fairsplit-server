@@ -19,7 +19,28 @@ import { generateVerificationCode } from '~/utils/verification'
 import { VerificationCode, VerificationCodeType } from '~/models/schemas/verificationCode.schema'
 import smsService from './sms.service'
 
+const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = 3600 // 1 hour in seconds
+const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = 604800 // 7 days in seconds
+const MAX_REFRESH_TOKEN_EXPIRES_IN = 2592000 // 30 days in seconds
+
 class AuthService {
+  private getAccessTokenExpiresIn(): number {
+    const configValue = envConfig.accessTokenExpiresIn
+    if (typeof configValue === 'string') {
+      const parsed = parseInt(configValue)
+      return isNaN(parsed) ? DEFAULT_ACCESS_TOKEN_EXPIRES_IN : parsed
+    }
+    return configValue || DEFAULT_ACCESS_TOKEN_EXPIRES_IN
+  }
+
+  private getRefreshTokenExpiresIn(): number {
+    const configValue = envConfig.refreshTokenExpiresIn
+    if (typeof configValue === 'string') {
+      const parsed = parseInt(configValue)
+      return isNaN(parsed) ? DEFAULT_REFRESH_TOKEN_EXPIRES_IN : Math.min(parsed, MAX_REFRESH_TOKEN_EXPIRES_IN)
+    }
+    return configValue ? Math.min(configValue, MAX_REFRESH_TOKEN_EXPIRES_IN) : DEFAULT_REFRESH_TOKEN_EXPIRES_IN
+  }
   private signAccessToken({ userId, verify }: { userId: string; verify: UserVerificationStatus }) {
     return signToken({
       payload: {
@@ -29,7 +50,7 @@ class AuthService {
       },
       privateKey: envConfig.jwtSecretAccessToken,
       options: {
-        expiresIn: envConfig.accessTokenExpiresIn
+        expiresIn: this.getAccessTokenExpiresIn()
       }
     })
   }
@@ -57,7 +78,7 @@ class AuthService {
       },
       privateKey: envConfig.jwtSecretRefreshToken,
       options: {
-        expiresIn: envConfig.refreshTokenExpiresIn
+        expiresIn: this.getRefreshTokenExpiresIn()
       }
     })
   }
@@ -137,7 +158,6 @@ class AuthService {
     const userResponse = excludeSensitiveFields(newUser)
     return {
       user: userResponse,
-      verificationCode,
       emailSent: true
     }
   }
@@ -565,7 +585,7 @@ class AuthService {
     const verificationCode = await databaseServices.verificationCodes.findOne({
       userId: new ObjectId(userId),
       code,
-      type: VerificationCodeType.EmailVerification,
+      type: VerificationCodeType.PhoneVerification,
       isUsed: false
     })
 
@@ -673,7 +693,7 @@ class AuthService {
     const verificationCodeDoc = new VerificationCode({
       userId: user._id,
       code: verificationCode,
-      type: VerificationCodeType.EmailVerification,
+      type: VerificationCodeType.PhoneVerification,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
     })
 
