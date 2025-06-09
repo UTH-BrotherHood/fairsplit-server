@@ -10,74 +10,57 @@ export enum TokenType {
 
 export interface IToken {
   _id?: ObjectId
-  userId: ObjectId
   token: string
   type: TokenType
+  userId?: ObjectId
+  adminId?: ObjectId
   expiresAt: Date
-  createdAt: Date
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 export class Token implements IToken {
   _id?: ObjectId
-  userId: ObjectId
   token: string
   type: TokenType
+  userId?: ObjectId
+  adminId?: ObjectId
   expiresAt: Date
-  createdAt: Date
+  createdAt?: Date
+  updatedAt?: Date
 
-  constructor({
-    userId,
-    token,
-    type,
-    expiresAt,
-    createdAt = new Date()
-  }: {
-    userId: ObjectId | string
-    token: string
-    type: TokenType
-    expiresAt: Date
-    createdAt?: Date
-  }) {
-    this.userId = typeof userId === 'string' ? new ObjectId(userId) : userId
+  constructor({ token, type, userId, adminId, expiresAt, createdAt, updatedAt }: IToken) {
     this.token = token
     this.type = type
+    this.userId = userId
+    this.adminId = adminId
     this.expiresAt = expiresAt
     this.createdAt = createdAt
+    this.updatedAt = updatedAt
   }
 }
+
 export const TokenModel = {
   collectionName: envConfig.dbTokenCollection,
   jsonSchema: {
     bsonType: 'object',
-    required: ['userId', 'token', 'type', 'expiresAt', 'createdAt'],
+    required: ['token', 'type', 'expiresAt'],
     properties: {
       _id: { bsonType: 'objectId' },
-      userId: {
-        bsonType: 'objectId',
-        description: 'Reference to the user this token belongs to'
-      },
-      token: {
-        bsonType: 'string',
-        minLength: 32,
-        description: 'The actual token string'
-      },
-      type: {
-        enum: Object.values(TokenType),
-        description: 'Type of the token'
-      },
-      expiresAt: {
-        bsonType: 'date',
-        description: 'When this token expires'
-      },
-      createdAt: {
-        bsonType: 'date',
-        description: 'When this token was created'
-      }
+      token: { bsonType: 'string' },
+      type: { bsonType: 'string', enum: Object.values(TokenType) },
+      userId: { bsonType: 'objectId' },
+      adminId: { bsonType: 'objectId' },
+      expiresAt: { bsonType: 'date' },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
     }
   },
   indexes: [
     { key: { token: 1 }, unique: true },
-    { key: { userId: 1, type: 1 } },
-    { key: { expiresAt: 1 }, expireAfterSeconds: 0 }
+    { key: { type: 1 } },
+    { key: { userId: 1 } },
+    { key: { adminId: 1 } },
+    { key: { expiresAt: 1 } }
   ]
 }
