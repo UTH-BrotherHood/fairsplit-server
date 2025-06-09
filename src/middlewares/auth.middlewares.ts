@@ -9,6 +9,7 @@ import databaseServices from '~/services/database.services'
 import { UserVerificationType } from '~/models/schemas/user.schema'
 import { TokenPayload } from '~/models/requests/user.requests'
 import { TokenType } from '~/models/schemas/token.schema'
+import redisClient from '~/config/redis'
 
 const usernameSchema: ParamSchema = {
   notEmpty: {
@@ -402,6 +403,17 @@ export const refreshTokenValidation = validate(
           }
 
           try {
+            // Check if token is blacklisted
+            const redis = await redisClient
+            const blacklistKey = `blacklist:token:${value}`
+            const isBlacklisted = await redis.exists(blacklistKey)
+            if (isBlacklisted) {
+              throw new ErrorWithStatus({
+                message: USER_MESSAGES.USED_REFRESH_TOKEN_OR_NOT_EXIST,
+                status: httpStatusCode.UNAUTHORIZED
+              })
+            }
+
             const [decodedRefreshToken, refreshToken] = await Promise.all([
               verifyToken({ token: value, secretOrPublickey: process.env.JWT_SECRET_REFRESH_TOKEN as string }),
               databaseServices.tokens.findOne({ token: value, type: TokenType.RefreshToken })
