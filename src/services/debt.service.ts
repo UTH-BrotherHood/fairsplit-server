@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb'
 import { ErrorWithStatus } from '~/utils/error.utils'
 import { DEBT_MESSAGES } from '~/constants/messages'
 import { httpStatusCode } from '~/core/httpStatusCode'
-import { DebtStatus } from '~/models/schemas/debt.schema'
+import { DebtStatus, Settlement } from '~/models/schemas/debt.schema'
 import { GetDebtsReqQuery, SettleDebtReqBody } from '~/models/requests/debt.requests'
 import databaseService from './database.services'
 
@@ -144,7 +144,7 @@ class DebtsService {
       })
     }
 
-    const settlement = {
+    const settlement: Settlement = {
       _id: new ObjectId(),
       amount: payload.amount,
       method: payload.method,
@@ -154,8 +154,9 @@ class DebtsService {
       createdAt: new Date()
     }
 
-    const remainingAmount = debt.amount - (debt.settlements?.reduce((sum, s) => sum + s.amount, 0) || 0)
-    const newStatus = payload.amount >= remainingAmount ? DebtStatus.Settled : DebtStatus.PartiallySettled
+    const remainingAmount =
+      debt.amount - (debt.settlements?.reduce((sum: number, s: Settlement) => sum + s.amount, 0) || 0)
+    const newStatus = payload.amount >= remainingAmount ? DebtStatus.Settled : DebtStatus.PartialSettled
 
     const result = await databaseService.debts.findOneAndUpdate(
       { _id: new ObjectId(debtId) },

@@ -12,7 +12,7 @@ import {
 } from '~/models/requests/bill.requests'
 import databaseService from './database.services'
 
-class BillsService {
+class BillService {
   private async checkGroupMembership(userId: string, groupId: string) {
     const group = await databaseService.groups.findOne({
       _id: new ObjectId(groupId),
@@ -302,5 +302,5 @@ class BillsService {
   }
 }
 
-const billsService = new BillsService()
-export default billsService
+const billService = new BillService()
+export default billService

@@ -11,7 +11,7 @@ import {
 } from '~/models/requests/group.requests'
 import databaseService from './database.services'
 
-class GroupsService {
+class GroupService {
   async createGroup(userId: string, payload: CreateGroupReqBody) {
     const group: IGroup = {
       name: payload.name,
@@ -280,5 +280,5 @@ class GroupsService {
   }
 }
 
-const groupsService = new GroupsService()
-export default groupsService
+const groupService = new GroupService()
+export default groupService

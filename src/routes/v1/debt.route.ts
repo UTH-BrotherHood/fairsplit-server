@@ -2,164 +2,83 @@ import { Router } from 'express'
 import { validate } from '~/utils/validation.utils'
 import { checkSchema } from 'express-validator'
 import { accessTokenValidation } from '~/middlewares/auth.middlewares'
-import { wrapRequestHandler } from '~/utils/handler.utils'
 import debtController from '~/controllers/debt.controller'
+import { wrapRequestHandler } from '~/utils/wrapHandler'
 
 const debtRoute = Router()
 
 /**
- * Debt Management Routes
+ * @swagger
+ * /api/v1/debts/groups/{groupId}:
+ *   get:
+ *     summary: Get all debts in a group
  */
 debtRoute.get(
-  '/group/:groupId',
+  '/groups/:groupId',
   accessTokenValidation,
   validate(
     checkSchema({
       groupId: {
-        notEmpty: true,
-        isMongoId: true
+        in: ['params'],
+        isString: true,
+        trim: true,
+        notEmpty: true
       }
     })
   ),
   wrapRequestHandler(debtController.getGroupDebts)
 )
 
-debtRoute.get(
-  '/my-debts',
-  accessTokenValidation,
-  validate(
-    checkSchema({
-      status: {
-        optional: true,
-        isIn: {
-          options: [['pending', 'partially_paid', 'completed']]
-        }
-      },
-      groupId: {
-        optional: true,
-        isMongoId: true
-      }
-    })
-  ),
-  wrapRequestHandler(debtController.getMyDebts)
-)
-
-debtRoute.get(
-  '/summary',
-  accessTokenValidation,
-  validate(
-    checkSchema({
-      groupId: {
-        optional: true,
-        isMongoId: true
-      }
-    })
-  ),
-  wrapRequestHandler(debtController.getDebtSummary)
-)
+/**
+ * @swagger
+ * /api/v1/debts/my-debts:
+ *   get:
+ *     summary: Get all debts of current user
+ */
+debtRoute.get('/my-debts', accessTokenValidation, wrapRequestHandler(debtController.getMyDebts))
 
 /**
- * Debt Settlement Routes
+ * @swagger
+ * /api/v1/debts/{debtId}/settle:
+ *   post:
+ *     summary: Settle a debt
  */
 debtRoute.post(
-  '/settle',
+  '/:debtId/settle',
   accessTokenValidation,
   validate(
     checkSchema({
-      groupId: {
-        notEmpty: true,
-        isMongoId: true
-      },
-      debtorId: {
-        notEmpty: true,
-        isMongoId: true
-      },
-      creditorId: {
-        notEmpty: true,
-        isMongoId: true
-      },
-      amount: {
-        notEmpty: true,
-        isFloat: {
-          options: { min: 0 }
-        }
-      },
-      currency: {
-        notEmpty: true,
-        isString: true,
-        isLength: {
-          options: { min: 3, max: 3 }
-        }
-      },
-      date: {
-        notEmpty: true,
-        isISO8601: true
-      },
-      method: {
-        notEmpty: true,
-        isIn: {
-          options: [['cash', 'bank_transfer', 'other']]
-        }
-      },
-      notes: {
-        optional: true,
+      debtId: {
+        in: ['params'],
         isString: true,
         trim: true,
-        isLength: {
-          options: { max: 500 }
-        }
+        notEmpty: true
       }
     })
   ),
   wrapRequestHandler(debtController.settleDebt)
 )
 
+/**
+ * @swagger
+ * /api/v1/debts/{debtId}/history:
+ *   get:
+ *     summary: Get debt history
+ */
 debtRoute.get(
-  '/settlements',
+  '/:debtId/history',
   accessTokenValidation,
   validate(
     checkSchema({
-      groupId: {
-        optional: true,
-        isMongoId: true
-      },
-      startDate: {
-        optional: true,
-        isISO8601: true
-      },
-      endDate: {
-        optional: true,
-        isISO8601: true
-      },
-      page: {
-        optional: true,
-        isInt: {
-          options: { min: 1 }
-        }
-      },
-      limit: {
-        optional: true,
-        isInt: {
-          options: { min: 1, max: 100 }
-        }
+      debtId: {
+        in: ['params'],
+        isString: true,
+        trim: true,
+        notEmpty: true
       }
     })
   ),
-  wrapRequestHandler(debtController.getSettlements)
-)
-
-debtRoute.get(
-  '/settlements/:settlementId',
-  accessTokenValidation,
-  validate(
-    checkSchema({
-      settlementId: {
-        notEmpty: true,
-        isMongoId: true
-      }
-    })
-  ),
-  wrapRequestHandler(debtController.getSettlementById)
+  wrapRequestHandler(debtController.getDebtHistory)
 )
 
 export default debtRoute

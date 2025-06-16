@@ -4,18 +4,35 @@ import { envConfig } from '~/config/env'
 export enum DebtStatus {
   Active = 'active',
   Settled = 'settled',
+  PartialSettled = 'partially_settled',
   Disputed = 'disputed'
+}
+
+export interface Settlement {
+  _id: ObjectId
+  amount: number
+  method: string
+  date: Date
+  notes?: string
+  settledBy: ObjectId
+  createdAt: Date
+}
+
+export interface DebtParticipant {
+  userId: ObjectId
+  name: string
 }
 
 export interface IDebt {
   _id?: ObjectId
   groupId: ObjectId
-  fromUserId: ObjectId
-  toUserId: ObjectId
+  from: DebtParticipant
+  to: DebtParticipant
   billId: ObjectId
   amount: number
   remainingAmount: number
   status: DebtStatus
+  settlements?: Settlement[]
   dueDate?: Date
   createdAt: Date
   updatedAt: Date
@@ -31,8 +48,8 @@ export const DebtModel = {
     bsonType: 'object',
     required: [
       'groupId',
-      'fromUserId',
-      'toUserId',
+      'from',
+      'to',
       'billId',
       'amount',
       'remainingAmount',
@@ -44,8 +61,22 @@ export const DebtModel = {
     properties: {
       _id: { bsonType: 'objectId' },
       groupId: { bsonType: 'objectId' },
-      fromUserId: { bsonType: 'objectId' },
-      toUserId: { bsonType: 'objectId' },
+      from: {
+        bsonType: 'object',
+        required: ['userId', 'name'],
+        properties: {
+          userId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' }
+        }
+      },
+      to: {
+        bsonType: 'object',
+        required: ['userId', 'name'],
+        properties: {
+          userId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' }
+        }
+      },
       billId: { bsonType: 'objectId' },
       amount: {
         bsonType: 'number',
@@ -57,6 +88,20 @@ export const DebtModel = {
       },
       status: {
         enum: Object.values(DebtStatus)
+      },
+      settlements: {
+        bsonType: 'array',
+        items: {
+          bsonType: 'object',
+          required: ['_id', 'amount', 'method', 'date', 'settledBy'],
+          properties: {
+            _id: { bsonType: 'objectId' },
+            amount: { bsonType: 'number' },
+            method: { bsonType: 'string' },
+            date: { bsonType: 'date' },
+            settledBy: { bsonType: 'objectId' }
+          }
+        }
       },
       dueDate: { bsonType: 'date' },
       createdAt: { bsonType: 'date' },
@@ -75,12 +120,12 @@ export const DebtModel = {
   },
   indexes: [
     { key: { groupId: 1 } },
-    { key: { fromUserId: 1 } },
-    { key: { toUserId: 1 } },
+    { key: { 'from.userId': 1 } },
+    { key: { 'to.userId': 1 } },
     { key: { billId: 1 } },
     { key: { status: 1 } },
     { key: { dueDate: 1 } },
     // Compound index for querying debts between two users in a group
-    { key: { groupId: 1, fromUserId: 1, toUserId: 1 } }
+    { key: { groupId: 1, 'from.userId': 1, 'to.userId': 1 } }
   ]
 }

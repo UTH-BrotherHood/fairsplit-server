@@ -13,6 +13,7 @@ import { IAdmin } from '~/models/schemas/admin.schema'
 import { ICategory } from '~/models/schemas/category.schema'
 import { IBill } from '~/models/schemas/bill.schema'
 import { IFriendRequest } from '~/models/schemas/friendRequest.schema'
+import { IDebt } from '~/models/schemas/debt.schema'
 
 export class DatabaseServices {
   private client: MongoClient
@@ -101,6 +102,10 @@ export class DatabaseServices {
 
   get bills(): Collection<IBill> {
     return this.db.collection<IBill>(config.dbBillCollection)
+  }
+
+  get debts(): Collection<IDebt> {
+    return this.db.collection<IDebt>(config.dbDebtCollection)
   }
 
   get friendRequests(): Collection<IFriendRequest> {
