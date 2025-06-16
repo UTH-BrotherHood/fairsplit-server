@@ -12,7 +12,7 @@ export interface ErrorResponse {
     message: string
     status: number
     code?: string
-    details?: Record<string, any>
+    details?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
   }
 }
 
@@ -21,14 +21,14 @@ export interface ValidationError {
   msg: string
   param?: string
   location?: string
-  value?: any
+  value?: any // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 type ErrorsType = Record<
   string,
   {
     msg: string
-    [key: string]: any
+    [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
   }
 >
 
