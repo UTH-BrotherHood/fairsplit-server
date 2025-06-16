@@ -5,7 +5,7 @@ import { logger } from '~/loggers/my-logger.log'
 import { ErrorWithStatus, EntityError, ErrorResponse, ValidationError } from '~/utils/error.utils'
 
 // Định nghĩa rõ kiểu là ErrorRequestHandler
-export const defaultErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+export const defaultErrorHandler: ErrorRequestHandler = (err, req, res) => {
   // Chuẩn bị thông tin request để log
   const requestInfo = {
     method: req.method,
@@ -14,7 +14,7 @@ export const defaultErrorHandler: ErrorRequestHandler = (err, req, res, next) =>
     body: omit(req.body, ['password', 'confirmPassword']), // Loại bỏ các field nhạy cảm
     query: req.query,
     userIP: req.ip || req.socket.remoteAddress,
-    userId: (req as any).decodedAuthorization?.userId || 'NOT_AUTHENTICATED'
+    userId: (req as any).decodedAuthorization?.userId || 'NOT_AUTHENTICATED' // eslint-disable-line @typescript-eslint/no-explicit-any
   }
 
   // Chuẩn bị response error mặc định
