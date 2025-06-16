@@ -1,6 +1,5 @@
 import { ObjectId } from 'mongodb'
 import envConfig from '~/config/env'
-import { roles } from '~/config/role'
 
 export enum UserVerificationStatus {
   Unverified = 'Unverified',
@@ -23,6 +22,27 @@ export interface IUser {
   dateOfBirth: Date
   verify: UserVerificationStatus
   verificationType: UserVerificationType
+  friends?: ObjectId[]
+  blockedUsers?: Array<{
+    userId: ObjectId
+    reason?: string
+    createdAt: Date
+  }>
+  preferences?: {
+    language?: string
+    theme?: string
+    notifications?: {
+      email?: boolean
+      push?: boolean
+      sms?: boolean
+    }
+    [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  }
+  privacySettings?: {
+    profileVisibility?: 'public' | 'friends' | 'private'
+    friendRequests?: 'everyone' | 'friendsOfFriends' | 'none'
+    [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  }
   google?: {
     googleId: string
   }
@@ -47,6 +67,27 @@ export class User implements IUser {
   avatarUrl?: string
   verify: UserVerificationStatus
   verificationType: UserVerificationType
+  friends?: ObjectId[]
+  blockedUsers?: Array<{
+    userId: ObjectId
+    reason?: string
+    createdAt: Date
+  }>
+  preferences?: {
+    language?: string
+    theme?: string
+    notifications?: {
+      email?: boolean
+      push?: boolean
+      sms?: boolean
+    }
+    [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  }
+  privacySettings?: {
+    profileVisibility?: 'public' | 'friends' | 'private'
+    friendRequests?: 'everyone' | 'friendsOfFriends' | 'none'
+    [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  }
   google?: {
     googleId: string
   }
@@ -69,6 +110,13 @@ export class User implements IUser {
     avatarUrl,
     verify = UserVerificationStatus.Unverified,
     verificationType,
+    friends = [],
+    blockedUsers = [],
+    preferences = {},
+    privacySettings = {
+      profileVisibility: 'public',
+      friendRequests: 'everyone'
+    },
     google,
     facebook,
     twitter,
@@ -84,6 +132,27 @@ export class User implements IUser {
     avatarUrl?: string
     verify?: UserVerificationStatus
     verificationType: UserVerificationType
+    friends?: ObjectId[]
+    blockedUsers?: Array<{
+      userId: ObjectId
+      reason?: string
+      createdAt: Date
+    }>
+    preferences?: {
+      language?: string
+      theme?: string
+      notifications?: {
+        email?: boolean
+        push?: boolean
+        sms?: boolean
+      }
+      [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
+    }
+    privacySettings?: {
+      profileVisibility?: 'public' | 'friends' | 'private'
+      friendRequests?: 'everyone' | 'friendsOfFriends' | 'none'
+      [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
+    }
     google?: {
       googleId: string
     }
@@ -105,6 +174,10 @@ export class User implements IUser {
     this.avatarUrl = avatarUrl
     this.verify = verify
     this.verificationType = verificationType
+    this.friends = friends
+    this.blockedUsers = blockedUsers
+    this.preferences = preferences
+    this.privacySettings = privacySettings
     this.google = google
     this.facebook = facebook
     this.twitter = twitter
@@ -125,7 +198,6 @@ export const UserModel = {
       'dateOfBirth',
       'avatarUrl',
       'verificationType',
-      'role',
       'createdAt',
       'updatedAt'
     ],
@@ -174,10 +246,51 @@ export const UserModel = {
         enum: Object.values(UserVerificationType),
         description: 'User verification type (email or phone)'
       },
-      role: {
-        bsonType: 'string',
-        enum: Object.values(roles),
-        description: 'User role'
+      friends: {
+        bsonType: 'array',
+        items: {
+          bsonType: 'objectId'
+        },
+        description: 'User friends'
+      },
+      blockedUsers: {
+        bsonType: 'array',
+        items: {
+          bsonType: 'object',
+          required: ['userId', 'createdAt'],
+          properties: {
+            userId: { bsonType: 'objectId' },
+            reason: { bsonType: 'string' },
+            createdAt: { bsonType: 'date' }
+          }
+        },
+        description: 'Users blocked by this user'
+      },
+      preferences: {
+        bsonType: 'object',
+        properties: {
+          language: { bsonType: 'string' },
+          theme: { bsonType: 'string' },
+          notifications: {
+            bsonType: 'object',
+            properties: {
+              email: { bsonType: 'bool' },
+              push: { bsonType: 'bool' },
+              sms: { bsonType: 'bool' }
+            }
+          }
+        }
+      },
+      privacySettings: {
+        bsonType: 'object',
+        properties: {
+          profileVisibility: {
+            enum: ['public', 'friends', 'private']
+          },
+          friendRequests: {
+            enum: ['everyone', 'friendsOfFriends', 'none']
+          }
+        }
       },
       createdAt: {
         bsonType: 'date',

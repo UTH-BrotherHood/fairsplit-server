@@ -54,3 +54,42 @@ export interface ResendVerificationEmailReqBody {
 export interface ResendVerificationSMSReqBody {
   phone: string
 }
+
+export interface UpdateMeReqBody {
+  username?: string
+  avatarUrl?: string
+  dateOfBirth?: string
+}
+
+export interface ChangePasswordReqBody {
+  oldPassword: string
+  newPassword: string
+  confirmPassword: string
+}
+
+export interface SearchUsersReqQuery {
+  query?: string
+  page?: number
+  limit?: number
+}
+
+export interface UpdateUserPreferencesReqBody {
+  language?: string
+  theme?: string
+  notifications?: {
+    email?: boolean
+    push?: boolean
+    sms?: boolean
+  }
+  [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+export interface UpdatePrivacySettingsReqBody {
+  profile_visibility?: 'public' | 'friends' | 'private'
+  friend_requests?: 'everyone' | 'friends_of_friends' | 'none'
+  [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+export interface BlockUserReqBody {
+  reason?: string
+}
