@@ -56,7 +56,47 @@ export const USER_MESSAGES = {
   RESET_PASSWORD_TOKEN_EXPIRED: 'Reset password token has expired',
   PASSWORD_RESET_SUCCESSFULLY: 'Password reset successfully',
   VERIFICATION_EMAIL_SENT_SUCCESSFULLY: 'Verification email sent successfully',
-  VERIFICATION_SMS_SENT_SUCCESSFULLY: 'Verification SMS sent successfully'
+  VERIFICATION_SMS_SENT_SUCCESSFULLY: 'Verification SMS sent successfully',
+  TOKEN_IS_INVALID: 'Token is invalid or has been blacklisted',
+  DATE_OF_BIRTH_MUST_BE_ISO8601: 'Date of birth must be in ISO 8601 format',
+  OLD_PASSWORD_NOT_MATCH: 'Old password does not match',
+  USER_NOT_VERIFIED: 'User is not verified',
+  USER_BANNED: 'User has been banned',
+  USER_DELETED: 'User has been deleted',
+  FRIEND_REQUEST_SENT: 'Friend request sent successfully',
+  FRIEND_REQUEST_ACCEPTED: 'Friend request accepted successfully',
+  FRIEND_REQUEST_REJECTED: 'Friend request rejected successfully',
+  FRIEND_REQUEST_CANCELLED: 'Friend request cancelled successfully',
+  FRIEND_REQUEST_NOT_FOUND: 'Friend request not found',
+  FRIEND_REQUEST_ALREADY_SENT: 'Friend request already sent',
+  FRIEND_REQUEST_ALREADY_ACCEPTED: 'Friend request already accepted',
+  FRIEND_REQUEST_ALREADY_REJECTED: 'Friend request already rejected',
+  FRIEND_REQUEST_ALREADY_CANCELLED: 'Friend request already cancelled',
+  CANNOT_SEND_FRIEND_REQUEST_TO_YOURSELF: 'Cannot send friend request to yourself',
+  CANNOT_SEND_FRIEND_REQUEST_TO_BLOCKED_USER: 'Cannot send friend request to blocked user',
+  CANNOT_SEND_FRIEND_REQUEST_TO_USER_WHO_BLOCKED_YOU: 'Cannot send friend request to user who blocked you',
+  CANNOT_SEND_FRIEND_REQUEST_TO_FRIEND: 'Cannot send friend request to friend',
+  USER_BLOCKED_SUCCESSFULLY: 'User blocked successfully',
+  USER_UNBLOCKED_SUCCESSFULLY: 'User unblocked successfully',
+  USER_ALREADY_BLOCKED: 'User already blocked',
+  USER_NOT_BLOCKED: 'User not blocked',
+  CANNOT_BLOCK_YOURSELF: 'Cannot block yourself',
+  CANNOT_UNBLOCK_YOURSELF: 'Cannot unblock yourself',
+  PREFERENCES_UPDATED_SUCCESSFULLY: 'Preferences updated successfully',
+  PRIVACY_SETTINGS_UPDATED_SUCCESSFULLY: 'Privacy settings updated successfully',
+  GET_ME_SUCCESSFULLY: 'Get user profile successfully',
+  UPDATE_ME_SUCCESSFULLY: 'Update profile successfully',
+  CHANGE_PASSWORD_SUCCESSFULLY: 'Change password successfully',
+  GET_FRIENDS_SUCCESSFULLY: 'Get friends list successfully',
+  GET_FRIEND_REQUESTS_SUCCESSFULLY: 'Get friend requests successfully',
+  GET_BLOCKED_USERS_SUCCESSFULLY: 'Get blocked users successfully',
+  GET_USER_ACTIVITY_SUCCESSFULLY: 'Get user activity successfully',
+  GET_USER_STATISTICS_SUCCESSFULLY: 'Get user statistics successfully',
+  SEARCH_USERS_SUCCESSFULLY: 'Search users successfully',
+  GET_SUGGESTED_USERS_SUCCESSFULLY: 'Get suggested users successfully',
+  GET_TRENDING_USERS_SUCCESSFULLY: 'Get trending users successfully',
+  GET_USER_PREFERENCES_SUCCESSFULLY: 'Get user preferences successfully',
+  GET_PRIVACY_SETTINGS_SUCCESSFULLY: 'Get privacy settings successfully'
 } as const
 
 export const AUTH_MESSAGES = {
@@ -79,4 +119,61 @@ export const TOKEN_MESSAGES = {
   TOKEN_ALREADY_EXISTS: 'Token already exists',
   TOKEN_CREATION_FAILED: 'Failed to create token',
   TOKEN_BLACKLIST_FAILED: 'Failed to blacklist token'
+} as const
+
+export const ADMIN_MESSAGES = {
+  // Authentication
+  EMAIL_REQUIRED: 'Email is required',
+  EMAIL_INVALID: 'Invalid email format',
+  PASSWORD_REQUIRED: 'Password is required',
+  PASSWORD_MUST_BE_STRING: 'Password must be a string',
+  PASSWORD_LENGTH: 'Password must be between 6 and 50 characters',
+  INVALID_CREDENTIALS: 'Invalid credentials',
+  LOGIN_SUCCESSFULLY: 'Login successful',
+  LOGOUT_SUCCESSFULLY: 'Logout successful',
+  ACCESS_TOKEN_IS_REQUIRED: 'Access token is required',
+  REFRESH_TOKEN_IS_REQUIRED: 'Refresh token is required',
+  ADMIN_ACCESS_REQUIRED: 'Admin access required',
+
+  // User Management
+  USER_NOT_FOUND: 'User not found',
+  USER_STATUS_UPDATED: 'User status updated successfully',
+  USER_DELETED_SUCCESSFULLY: 'User deleted successfully',
+
+  // Category Management
+  CATEGORY_NOT_FOUND: 'Category not found',
+  CATEGORY_CREATED_SUCCESSFULLY: 'Category created successfully',
+  CATEGORY_UPDATED_SUCCESSFULLY: 'Category updated successfully',
+  CATEGORY_DELETED_SUCCESSFULLY: 'Category deleted successfully',
+
+  // Bill Management
+  BILL_NOT_FOUND: 'Bill not found',
+  BILL_STATUS_UPDATED_SUCCESSFULLY: 'Bill status updated successfully',
+  BILL_DELETED_SUCCESSFULLY: 'Bill deleted successfully',
+
+  // System Settings
+  MAX_GROUPS_INVALID: 'Maximum groups per user must be at least 1',
+  CURRENCY_INVALID: 'Invalid currency format',
+  CURRENCY_LENGTH: 'Currency must be 3 characters',
+  PASSWORD_MIN_LENGTH_INVALID: 'Password minimum length must be at least 6',
+  PASSWORD_POLICY_INVALID: 'Invalid password policy setting',
+  NOTIFICATION_SETTINGS_INVALID: 'Invalid notification setting',
+  SETTINGS_UPDATED_SUCCESSFULLY: 'System settings updated successfully',
+
+  // Project Management
+  SYSTEM_STATUS_INVALID: 'Invalid system status',
+  MESSAGE_MUST_BE_STRING: 'Message must be a string',
+  MESSAGE_TOO_LONG: 'Message must not exceed 500 characters',
+  PROJECT_STATUS_UPDATED: 'Project status updated successfully',
+  BACKUP_CREATED_SUCCESSFULLY: 'System backup created successfully',
+
+  // Notifications
+  NOTIFICATION_ID_REQUIRED: 'Notification ID is required',
+  NOTIFICATION_ID_INVALID: 'Invalid notification ID',
+  NOTIFICATION_NOT_FOUND: 'Notification not found',
+  NOTIFICATION_MARKED_AS_READ: 'Notification marked as read',
+
+  // Error Messages
+  INTERNAL_SERVER_ERROR: 'Internal server error',
+  REFRESH_TOKEN_SUCCESSFULLY: 'Refresh token successfully'
 } as const
