@@ -1,10 +1,11 @@
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
+import { Strategy as GoogleStrategy, Profile, VerifyCallback } from 'passport-google-oauth20'
 import databaseServices from '~/services/database.services'
 import { ObjectId } from 'mongodb'
 import { logger } from '~/loggers/my-logger.log'
 import { envConfig } from '~/config/env'
 import { IUser } from '~/models/schemas/user.schema'
 import { UserVerificationStatus } from '~/models/schemas/user.schema'
+import { Request } from 'express'
 
 export const googleStrategy = new GoogleStrategy(
   {
@@ -15,7 +16,7 @@ export const googleStrategy = new GoogleStrategy(
     scope: ['profile', 'email'],
     passReqToCallback: true
   },
-  async (req, accessToken, refreshToken, profile, done) => {
+  async (req: Request, accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
     try {
       logger.info(`Google auth attempt for profile ID ${profile.id}`, 'passport.googleStrategy')
 
