@@ -1,12 +1,15 @@
 import { Router } from 'express'
 import authRoute from './auth.route'
+import adminRoute from './admin.route'
 import userRoute from './user.route'
+import { OK } from '~/core/succes.response'
 
 const rootRouterV1 = Router()
 
 rootRouterV1.get('/health', (_req, res) => {
-  console.log('Hello World')
-  res.status(200).send({ message: 'Welcome to Express & TypeScript Server' })
+  new OK({
+    message: 'Welcome to FairSplit API'
+  }).send(res)
 })
 
 const defaultRoutes = [
@@ -17,6 +20,10 @@ const defaultRoutes = [
   {
     path: '/users',
     route: userRoute
+  },
+  {
+    path: '/admin',
+    route: adminRoute
   }
 ]
 
