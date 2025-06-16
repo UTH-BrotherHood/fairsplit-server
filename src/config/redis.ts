@@ -40,8 +40,6 @@ const initializeRedisClient = (): Promise<RedisClientType> => {
       return redisClientInstance
     }
 
-    console.log('Initializing Redis connection to:', envConfig.redisUrl)
-
     const client = createClient({
       url: envConfig.redisUrl
     })
