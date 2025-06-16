@@ -75,6 +75,7 @@ export const envConfig = {
   // Collections
   dbUserCollection: process.env.DB_USER_COLLECTION as string,
   dbTokenCollection: process.env.DB_TOKEN_COLLECTION as string,
+  dbAdminCollection: process.env.DB_ADMIN_COLLECTION as string,
   dbVerificationCodeCollection: process.env.DB_VERIFICATION_CODE_COLLECTION as string,
   dbCategoryCollection: process.env.DB_CATEGORY_COLLECTION as string,
   dbNotificationCollection: process.env.DB_NOTIFICATION_COLLECTION as string,
@@ -83,5 +84,9 @@ export const envConfig = {
   dbTransactionCollection: process.env.DB_TRANSACTION_COLLECTION as string,
   dbShoppingListCollection: process.env.DB_SHOPPING_LIST_COLLECTION as string,
   dbBillCollection: process.env.DB_BILL_COLLECTION as string,
-  dbDebtCollection: process.env.DB_DEBT_COLLECTION as string
+  dbDebtCollection: process.env.DB_DEBT_COLLECTION as string,
+  dbSettingCollection: process.env.DB_SETTING_COLLECTION as string,
+  dbErrorLogCollection: process.env.DB_ERROR_LOG_COLLECTION as string,
+  dbAuditLogCollection: process.env.DB_AUDIT_LOG_COLLECTION as string,
+  dbFriendRequestCollection: process.env.DB_FRIEND_REQUEST_COLLECTION as string
 } as const
