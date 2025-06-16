@@ -177,3 +177,60 @@ export const ADMIN_MESSAGES = {
   INTERNAL_SERVER_ERROR: 'Internal server error',
   REFRESH_TOKEN_SUCCESSFULLY: 'Refresh token successfully'
 } as const
+
+export const BILL_MESSAGES = {
+  BILL_NOT_FOUND: 'Bill not found',
+  BILL_CREATED_SUCCESSFULLY: 'Bill created successfully',
+  BILL_UPDATED_SUCCESSFULLY: 'Bill updated successfully',
+  BILL_DELETED_SUCCESSFULLY: 'Bill deleted successfully',
+  PAYMENT_ADDED_SUCCESSFULLY: 'Payment added successfully',
+  USER_NOT_IN_GROUP: 'User is not a member of this group',
+  GROUP_NOT_FOUND: 'Group not found',
+  INVALID_PARTICIPANTS: 'Invalid participants',
+  INVALID_PERCENTAGE_SPLIT: 'Total percentage must be 100%',
+  NOT_BILL_CREATOR: 'Only bill creator, group owner, or admin can modify this bill',
+  BILL_HAS_PAYMENTS: 'Cannot delete bill with existing payments',
+  INVALID_USERS: 'Invalid users in payment',
+  GET_BILLS_SUCCESSFULLY: 'Get bills successfully',
+  GET_BILL_SUCCESSFULLY: 'Get bill successfully',
+  GET_PAYMENTS_SUCCESSFULLY: 'Get payments successfully'
+} as const
+
+export const DEBT_MESSAGES = {
+  DEBT_NOT_FOUND: 'Debt not found',
+  DEBT_CREATED_SUCCESSFULLY: 'Debt created successfully',
+  DEBT_UPDATED_SUCCESSFULLY: 'Debt updated successfully',
+  DEBT_SETTLED_SUCCESSFULLY: 'Debt settled successfully',
+  INVALID_SETTLEMENT_AMOUNT: 'Invalid settlement amount',
+  USER_NOT_IN_GROUP: 'User is not a member of this group',
+  GROUP_NOT_FOUND: 'Group not found',
+  NOT_DEBT_PARTICIPANT: 'You are not a participant in this debt',
+  DEBT_ALREADY_SETTLED: 'This debt has already been settled',
+  GET_DEBTS_SUCCESSFULLY: 'Get debts successfully',
+  GET_DEBT_HISTORY_SUCCESSFULLY: 'Get debt history successfully',
+  SETTLE_DEBT_SUCCESSFULLY: 'Settle debt successfully'
+} as const
+
+export const GROUP_MESSAGES = {
+  GROUP_NOT_FOUND: 'Group not found',
+  GROUP_CREATED_SUCCESSFULLY: 'Group created successfully',
+  GROUP_UPDATED_SUCCESSFULLY: 'Group updated successfully',
+  GROUP_DELETED_SUCCESSFULLY: 'Group deleted successfully',
+  USER_NOT_IN_GROUP: 'User is not a member of this group',
+  USER_NOT_AUTHORIZED: 'User is not authorized to perform this action',
+  USER_ALREADY_IN_GROUP: 'User is already a member of this group',
+  MEMBER_NOT_FOUND: 'Member not found',
+  CANNOT_UPDATE_OWNER: 'Cannot update group owner',
+  CANNOT_REMOVE_OWNER: 'Cannot remove group owner',
+  ADMIN_CANNOT_MODIFY_ADMIN: 'Admin cannot modify another admin',
+  ADMIN_CANNOT_REMOVE_ADMIN: 'Admin cannot remove another admin',
+  DELETE_GROUP_FAILED: 'Failed to delete group',
+  CREATE_GROUP_SUCCESSFULLY: 'Group created successfully',
+  GET_GROUPS_SUCCESSFULLY: 'Get groups successfully',
+  GET_GROUP_SUCCESSFULLY: 'Get group successfully',
+  UPDATE_GROUP_SUCCESSFULLY: 'Group updated successfully',
+  DELETE_GROUP_SUCCESSFULLY: 'Group deleted successfully',
+  ADD_MEMBER_SUCCESSFULLY: 'Member added successfully',
+  UPDATE_MEMBER_SUCCESSFULLY: 'Member updated successfully',
+  REMOVE_MEMBER_SUCCESSFULLY: 'Member removed successfully'
+} as const
