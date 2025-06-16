@@ -4,9 +4,12 @@ import httpStatusCode from '~/core/statusCodes'
 import { logger } from '~/loggers/my-logger.log'
 import { ErrorWithStatus, EntityError, ErrorResponse, ValidationError } from '~/utils/error.utils'
 
-// Định nghĩa rõ kiểu là ErrorRequestHandler
-export const defaultErrorHandler: ErrorRequestHandler = (err, req, res) => {
-  // Chuẩn bị thông tin request để log
+export const defaultErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+  if (res.headersSent) {
+    next(err)
+    return
+  }
+
   const requestInfo = {
     method: req.method,
     originalUrl: req.originalUrl,
@@ -20,14 +23,14 @@ export const defaultErrorHandler: ErrorRequestHandler = (err, req, res) => {
   // Chuẩn bị response error mặc định
   const errorResponse: ErrorResponse = {
     error: {
-      message: 'Internal Server Error',
-      status: httpStatusCode.INTERNAL_SERVER_ERROR
+      message: err.message || 'Internal Server Error',
+      status: err.status || httpStatusCode.INTERNAL_SERVER_ERROR
     }
   }
 
   // Log error details
   logger.error(
-    err.message,
+    err.message || 'Internal Server Error',
     'ErrorHandler',
     Array.isArray(req.headers['x-request-id'])
       ? req.headers['x-request-id'][0]
