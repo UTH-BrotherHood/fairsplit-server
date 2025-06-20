@@ -28,7 +28,7 @@ userRoute.patch(
 /**
  * User Search and Discovery
  */
-userRoute.get('/search', accessTokenValidation, searchUsersValidation, wrapRequestHandler(userController.searchUsers))
+userRoute.get('/search', accessTokenValidation, wrapRequestHandler(userController.searchUsers))
 userRoute.get('/suggestions', accessTokenValidation, wrapRequestHandler(userController.getSuggestedUsers))
 userRoute.get('/trending', accessTokenValidation, wrapRequestHandler(userController.getTrendingUsers))
 

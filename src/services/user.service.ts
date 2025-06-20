@@ -48,32 +48,45 @@ class UsersService {
   }
 
   async searchUsers(userId: string, query: any) {
-    const sanitizedQuery = query.trim().toLowerCase()
-
-    const { q = '', page = 1, limit = 10 } = sanitizedQuery
+    // Lấy và validate tham số
+    const q = typeof query.q === 'string' ? query.q.trim() : ''
+    const page = Number(query.page) > 0 ? Number(query.page) : 1
+    const limit = Number(query.limit) > 0 && Number(query.limit) <= 100 ? Number(query.limit) : 10
+    const sortBy = ['username', 'email', 'phone'].includes(query.sortBy) ? query.sortBy : 'username'
+    const sortOrder = query.sortOrder === 'DESC' ? -1 : 1
     const skip = (page - 1) * limit
 
+    console.log(query)
+
+    // Tạo điều kiện tìm kiếm
+    const searchCondition: any = { _id: { $ne: new ObjectId(userId) } }
+    if (q) {
+      // Nếu đã có text index, ưu tiên dùng $text
+      searchCondition.$or = [
+        { username: { $regex: q, $options: 'i' } },
+        { email: { $regex: q, $options: 'i' } },
+        { phone: { $regex: q, $options: 'i' } }
+      ]
+    }
+
+    // Chỉ lấy các trường cần thiết
+    const projection = {
+      hashPassword: 0,
+      forgotPasswordToken: 0,
+      emailVerifyToken: 0,
+      forgotPassword: 0
+      // Có thể loại bỏ thêm các trường khác nếu muốn
+    }
+
+    // Truy vấn
     const users = await this.users
-      .find({
-        $and: [
-          { _id: { $ne: new ObjectId(userId) } },
-          {
-            $or: [{ username: { $regex: q, $options: 'i' } }, { email: { $regex: q, $options: 'i' } }]
-          }
-        ]
-      })
+      .find(searchCondition, { projection })
+      .sort({ [sortBy]: sortOrder })
       .skip(skip)
       .limit(limit)
       .toArray()
 
-    const total = await this.users.countDocuments({
-      $and: [
-        { _id: { $ne: new ObjectId(userId) } },
-        {
-          $or: [{ username: { $regex: q, $options: 'i' } }, { email: { $regex: q, $options: 'i' } }]
-        }
-      ]
-    })
+    const total = await this.users.countDocuments(searchCondition)
 
     return {
       users: users.map((user) => excludeSensitiveFields(user)),
@@ -350,9 +363,25 @@ class UsersService {
       return []
     }
 
-    const friends = await this.users.find({ _id: { $in: user.friends } }).toArray()
+    const friends = await databaseServices.users
+      .find({ _id: { $in: user.friends.map((friend) => new ObjectId(friend)) } })
+      .toArray()
+    const friendRequests = await databaseServices.friendRequests
+      .find({
+        $or: [
+          { fromUserId: { $in: user.friends.map((friend) => new ObjectId(friend)) } },
+          { toUserId: { $in: user.friends.map((friend) => new ObjectId(friend)) } }
+        ]
+      })
+      .toArray()
 
-    return friends.map((friend) => excludeSensitiveFields(friend))
+    return {
+      friends: friends.map((friend) => excludeSensitiveFields(friend)),
+      friendRequests: friendRequests.map((request) => ({
+        ...request,
+        user: excludeSensitiveFields(request.fromUserId.toString() === userId ? request.toUserId : request.fromUserId)
+      }))
+    }
   }
 
   async getFriendRequests(userId: string) {
