@@ -382,7 +382,8 @@ class AdminService {
     if (paginationQuery.search) {
       query.$or = [
         { email: { $regex: paginationQuery.search, $options: 'i' } },
-        { username: { $regex: paginationQuery.search, $options: 'i' } }
+        { username: { $regex: paginationQuery.search, $options: 'i' } },
+        { phone: { $regex: paginationQuery.search, $options: 'i' } }
       ]
     }
 
