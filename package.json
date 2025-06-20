@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc && tsc-alias",
     "start": "node -r tsconfig-paths/register dist/index.js",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node -r tsconfig-paths/register' src/index.ts",
+    "dev": "nodemon --watch \"src/**/*.ts\" --exec ts-node -r tsconfig-paths/register src/index.ts",
     "lint": "eslint 'src/**/*.ts'",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --check .",
@@ -50,7 +50,8 @@
     "sharp": "^0.34.2",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
-    "winston-daily-rotate-file": "^5.0.0"
+    "winston-daily-rotate-file": "^5.0.0",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
