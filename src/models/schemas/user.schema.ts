@@ -2,13 +2,13 @@ import { ObjectId } from 'mongodb'
 import { z } from 'zod'
 
 export enum UserVerificationStatus {
-  Unverified = 'Unverified',
-  Verified = 'Verified'
+  Unverified = 'unverified',
+  Verified = 'verified'
 }
 
 export enum UserVerificationType {
-  Email = 'Email',
-  Phone = 'Phone'
+  Email = 'email',
+  Phone = 'phone'
 }
 
 export interface IUser {
