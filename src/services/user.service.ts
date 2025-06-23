@@ -1,10 +1,13 @@
 import databaseServices from './database.services'
-import { ObjectId } from 'mongodb'
+import { ObjectId, Sort } from 'mongodb'
 import { USER_MESSAGES } from '~/constants/messages'
 import { excludeSensitiveFields, getUserById, updateUserAndCache } from '~/utils/user.utils'
 import { hashPassword, comparePassword } from '~/utils/crypto'
 import { FriendRequestStatus } from '~/models/schemas/friendRequest.schema'
 import { IFriendRequest } from '~/models/schemas/friendRequest.schema'
+import { ChangePasswordReqBody, SearchUsersReqQuery } from '~/models/requests/user.requests'
+import { ErrorWithStatus } from '~/utils/error.utils'
+import { httpStatusCode } from '~/core/httpStatusCode'
 
 class UsersService {
   private users = databaseServices.users
@@ -13,7 +16,10 @@ class UsersService {
   async getMe(userId: string) {
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     return excludeSensitiveFields(user)
@@ -22,7 +28,10 @@ class UsersService {
   async updateMe(userId: string, payload: any) {
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     await updateUserAndCache(userId, payload)
@@ -30,15 +39,21 @@ class UsersService {
     return excludeSensitiveFields(user)
   }
 
-  async changePassword(userId: string, payload: any) {
+  async changePassword(userId: string, payload: ChangePasswordReqBody) {
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     const isMatch = await comparePassword(payload.oldPassword, user.hashPassword as string)
     if (!isMatch) {
-      throw new Error(USER_MESSAGES.OLD_PASSWORD_NOT_MATCH)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.OLD_PASSWORD_NOT_MATCH,
+        status: httpStatusCode.BAD_REQUEST
+      })
     }
 
     const hashedPassword = await hashPassword(payload.newPassword)
@@ -47,53 +62,67 @@ class UsersService {
     return true
   }
 
-  async searchUsers(userId: string, query: any) {
-    // Lấy và validate tham số
-    const q = typeof query.q === 'string' ? query.q.trim() : ''
-    const page = Number(query.page) > 0 ? Number(query.page) : 1
-    const limit = Number(query.limit) > 0 && Number(query.limit) <= 100 ? Number(query.limit) : 10
-    const sortBy = ['username', 'email', 'phone'].includes(query.sortBy) ? query.sortBy : 'username'
-    const sortOrder = query.sortOrder === 'DESC' ? -1 : 1
-    const skip = (page - 1) * limit
+  async searchUsers(userId: string, query: SearchUsersReqQuery) {
+    // Validate and transform input parameters with defaults
+    const searchQuery = {
+      q: (query.q || '').trim(),
+      page: Math.max(1, Number(query.page) || 1),
+      limit: Math.min(100, Math.max(1, Number(query.limit) || 10)),
+      sortBy: ['username', 'email', 'phone'].includes(query.sortBy as string) ? query.sortBy : 'username',
+      sortOrder: query.sortOrder === 'DESC' ? -1 : 1
+    }
 
-    console.log(query)
+    const skip = (searchQuery.page - 1) * searchQuery.limit
 
-    // Tạo điều kiện tìm kiếm
-    const searchCondition: any = { _id: { $ne: new ObjectId(userId) } }
-    if (q) {
-      // Nếu đã có text index, ưu tiên dùng $text
+    // Build search condition
+    const searchCondition: any = {
+      _id: { $ne: new ObjectId(userId) }
+    }
+
+    if (searchQuery.q) {
       searchCondition.$or = [
-        { username: { $regex: q, $options: 'i' } },
-        { email: { $regex: q, $options: 'i' } },
-        { phone: { $regex: q, $options: 'i' } }
+        { username: { $regex: searchQuery.q, $options: 'i' } },
+        { email: { $regex: searchQuery.q, $options: 'i' } },
+        { phone: { $regex: searchQuery.q, $options: 'i' } }
       ]
     }
 
-    // Chỉ lấy các trường cần thiết
+    // Define projection to exclude sensitive fields
     const projection = {
       hashPassword: 0,
       forgotPasswordToken: 0,
       emailVerifyToken: 0,
-      forgotPassword: 0
-      // Có thể loại bỏ thêm các trường khác nếu muốn
+      forgotPassword: 0,
+      blockedUsers: 0,
+      friends: 0,
+      groups: 0,
+      preferences: 0,
+      privacySettings: 0,
+      verify: 0,
+      verificationType: 0,
+      google: 0,
+      createdAt: 0,
+      updatedAt: 0
     }
 
-    // Truy vấn
-    const users = await this.users
-      .find(searchCondition, { projection })
-      .sort({ [sortBy]: sortOrder })
-      .skip(skip)
-      .limit(limit)
-      .toArray()
-
-    const total = await this.users.countDocuments(searchCondition)
+    // Execute queries in parallel for better performance
+    const [users, total] = await Promise.all([
+      this.users
+        .find(searchCondition, { projection })
+        .sort({ [searchQuery.sortBy as string]: searchQuery.sortOrder } as Sort)
+        .skip(skip)
+        .limit(searchQuery.limit)
+        .toArray(),
+      this.users.countDocuments(searchCondition)
+    ])
 
     return {
       users: users.map((user) => excludeSensitiveFields(user)),
       pagination: {
-        page,
-        limit,
-        total
+        page: searchQuery.page,
+        limit: searchQuery.limit,
+        total,
+        totalPages: Math.ceil(total / searchQuery.limit)
       }
     }
   }
@@ -112,17 +141,26 @@ class UsersService {
 
   async blockUser(userId: string, targetUserId: ObjectId, reason?: string) {
     if (userId === targetUserId.toString()) {
-      throw new Error(USER_MESSAGES.CANNOT_BLOCK_YOURSELF)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.CANNOT_BLOCK_YOURSELF,
+        status: httpStatusCode.BAD_REQUEST
+      })
     }
 
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     const targetUser = await getUserById(targetUserId)
     if (!targetUser) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     const isAlreadyBlocked = user.blockedUsers?.some(
@@ -130,7 +168,10 @@ class UsersService {
     )
 
     if (isAlreadyBlocked) {
-      throw new Error(USER_MESSAGES.USER_ALREADY_BLOCKED)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_ALREADY_BLOCKED,
+        status: httpStatusCode.BAD_REQUEST
+      })
     }
 
     await updateUserAndCache(userId, {
@@ -171,12 +212,18 @@ class UsersService {
 
   async unblockUser(userId: string, targetUserId: ObjectId) {
     if (userId === targetUserId.toString()) {
-      throw new Error(USER_MESSAGES.CANNOT_UNBLOCK_YOURSELF)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.CANNOT_UNBLOCK_YOURSELF,
+        status: httpStatusCode.BAD_REQUEST
+      })
     }
 
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     const isBlocked = user.blockedUsers?.some(
@@ -184,7 +231,10 @@ class UsersService {
     )
 
     if (!isBlocked) {
-      throw new Error(USER_MESSAGES.USER_NOT_BLOCKED)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_BLOCKED,
+        status: httpStatusCode.BAD_REQUEST
+      })
     }
 
     await updateUserAndCache(userId, {
@@ -199,7 +249,10 @@ class UsersService {
   async getBlockedUsers(userId: string) {
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     const blockedUsers = await Promise.all(
@@ -220,28 +273,43 @@ class UsersService {
 
   async sendFriendRequest(userId: string, targetUserId: ObjectId) {
     if (userId === targetUserId.toString()) {
-      throw new Error(USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_YOURSELF)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_YOURSELF,
+        status: httpStatusCode.BAD_REQUEST
+      })
     }
 
     const [user, targetUser] = await Promise.all([getUserById(userId), getUserById(targetUserId)])
 
     if (!user || !targetUser) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     // Check if users are already friends
     if (user.friends?.some((friendId) => friendId.toString() === targetUserId.toString())) {
-      throw new Error(USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_FRIEND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_FRIEND,
+        status: httpStatusCode.BAD_REQUEST
+      })
     }
 
     // Check if the target user has blocked the sender
     if (targetUser.blockedUsers?.some((blockedUser) => blockedUser.userId.toString() === userId)) {
-      throw new Error(USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_USER_WHO_BLOCKED_YOU)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_USER_WHO_BLOCKED_YOU,
+        status: httpStatusCode.BAD_REQUEST
+      })
     }
 
     // Check if the sender has blocked the target user
     if (user.blockedUsers?.some((blockedUser) => blockedUser.userId.toString() === targetUserId.toString())) {
-      throw new Error(USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_BLOCKED_USER)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_BLOCKED_USER,
+        status: httpStatusCode.BAD_REQUEST
+      })
     }
 
     // Check if there's already a pending request
@@ -261,7 +329,10 @@ class UsersService {
     })
 
     if (existingRequest) {
-      throw new Error(USER_MESSAGES.FRIEND_REQUEST_ALREADY_SENT)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.FRIEND_REQUEST_ALREADY_SENT,
+        status: httpStatusCode.BAD_REQUEST
+      })
     }
 
     await this.friendRequests.insertOne({
@@ -282,7 +353,10 @@ class UsersService {
     })
 
     if (!request) {
-      throw new Error(USER_MESSAGES.FRIEND_REQUEST_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.FRIEND_REQUEST_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     const [user, fromUser] = await Promise.all([getUserById(userId), getUserById(request.fromUserId.toString())])
@@ -318,7 +392,10 @@ class UsersService {
     })
 
     if (!request) {
-      throw new Error(USER_MESSAGES.FRIEND_REQUEST_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.FRIEND_REQUEST_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     await this.friendRequests.updateOne(
@@ -337,7 +414,10 @@ class UsersService {
     })
 
     if (!request) {
-      throw new Error(USER_MESSAGES.FRIEND_REQUEST_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.FRIEND_REQUEST_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     await this.friendRequests.updateOne(
@@ -356,7 +436,10 @@ class UsersService {
   async getFriends(userId: string) {
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     if (!user.friends || user.friends.length === 0) {
@@ -413,7 +496,10 @@ class UsersService {
   async getUserActivity(userId: string) {
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     // Get friend requests count
@@ -437,7 +523,10 @@ class UsersService {
   async getUserStatistics(userId: string) {
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     return {
@@ -453,7 +542,10 @@ class UsersService {
     // Get user's friends and blocked users
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     // Find users who are not friends and not blocked
@@ -491,7 +583,10 @@ class UsersService {
   async getUserPreferences(userId: string) {
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     return user.preferences || {}
@@ -500,7 +595,10 @@ class UsersService {
   async getPrivacySettings(userId: string) {
     const user = await getUserById(userId)
     if (!user) {
-      throw new Error(USER_MESSAGES.USER_NOT_FOUND)
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.USER_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
     }
 
     return (

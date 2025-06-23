@@ -44,7 +44,7 @@ export const changePasswordValidation = validate(
         errorMessage: USER_MESSAGES.PASSWORD_MUST_BE_STRONG
       }
     },
-    confirmPassword: {
+    confirmNewPassword: {
       notEmpty: {
         errorMessage: USER_MESSAGES.CONFIRM_PASSWORD_IS_REQUIRED
       },
