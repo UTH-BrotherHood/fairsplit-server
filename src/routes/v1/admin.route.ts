@@ -8,7 +8,8 @@ import {
   notificationMarkReadValidation,
   adminRefreshTokenValidation,
   categoryValidation,
-  billStatusValidation
+  billStatusValidation,
+  getAllUsersValidation
 } from '~/middlewares/admin.middlewares'
 import { wrapRequestHandler } from '~/utils/wrapHandler'
 
@@ -72,9 +73,14 @@ adminRoute.get(
 adminRoute.get('/transactions', adminAccessTokenValidation, wrapRequestHandler(adminController.getAllTransactions))
 
 /* ========================USER MANAGEMENT ROUTES======================== */
-adminRoute.get('/users', adminAccessTokenValidation, wrapRequestHandler(adminController.getAllUsers))
+adminRoute.get(
+  '/users',
+  adminAccessTokenValidation,
+  getAllUsersValidation,
+  wrapRequestHandler(adminController.getAllUsers)
+)
 adminRoute.get('/users/:userId', adminAccessTokenValidation, wrapRequestHandler(adminController.getUserById))
-adminRoute.put(
+adminRoute.patch(
   '/users/:userId/status',
   adminAccessTokenValidation,
   wrapRequestHandler(adminController.updateUserStatus)

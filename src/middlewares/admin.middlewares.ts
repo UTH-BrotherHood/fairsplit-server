@@ -206,11 +206,8 @@ export const categoryValidation = validate(
 export const billStatusValidation = validate(
   checkSchema({
     status: {
-      notEmpty: {
-        errorMessage: 'Bill status is required'
-      },
       isIn: {
-        options: [['pending', 'partially_paid', 'completed', 'cancelled']],
+        options: [['pending', 'paid', 'overdue', 'cancelled']],
         errorMessage: 'Invalid bill status'
       }
     }
@@ -273,6 +270,42 @@ export const adminRefreshTokenValidation = validate(
           }
           return true
         }
+      }
+    }
+  })
+)
+
+export const getAllUsersValidation = validate(
+  checkSchema({
+    page: {
+      optional: true,
+      isInt: {
+        options: { min: 1 },
+        errorMessage: 'Page must be a positive integer'
+      }
+    },
+    limit: {
+      optional: true,
+      isInt: {
+        options: { min: 1, max: 100 },
+        errorMessage: 'Limit must be between 1 and 100'
+      }
+    },
+    verify: {
+      optional: true,
+      isIn: {
+        options: [['verify', 'verified', 'unverify', 'unverified']],
+        errorMessage: 'Verify must be one of: verify, verified, unverify, unverified'
+      }
+    },
+    search: {
+      optional: true,
+      isString: {
+        errorMessage: 'Search must be a string'
+      },
+      isLength: {
+        options: { max: 100 },
+        errorMessage: 'Search query too long'
       }
     }
   })

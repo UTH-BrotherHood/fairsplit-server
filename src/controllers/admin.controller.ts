@@ -9,7 +9,8 @@ import {
   SystemSettingsReqBody,
   ProjectStatusReqBody,
   NotificationMarkReadReqBody,
-  TransactionFilterReqQuery
+  TransactionFilterReqQuery,
+  GetAllUsersReqQuery
 } from '~/models/requests/admin.requests'
 import { AdminTokenPayload } from '~/models/requests/admin.requests'
 
@@ -68,7 +69,10 @@ class AdminController {
   // Notifications
   async getAllNotifications(req: Request, res: Response) {
     const { page = 1, limit = 10 } = req.query
-    const notifications = await adminService.getAllNotifications(Number(page), Number(limit))
+    const notifications = await adminService.getAllNotifications({
+      page: Number(page),
+      limit: Number(limit)
+    })
     return new OK({
       data: { notifications }
     }).send(res)
@@ -130,7 +134,9 @@ class AdminController {
   // Transaction Management
   async getAllTransactions(req: Request<ParamsDictionary, unknown, unknown, TransactionFilterReqQuery>, res: Response) {
     const { page = 1, limit = 10, startDate, endDate, type, status } = req.query
-    const transactions = await adminService.getTransactionHistory(Number(page), Number(limit), {
+    const transactions = await adminService.getTransactionHistory({
+      page: Number(page),
+      limit: Number(limit),
       startDate,
       endDate,
       type,
@@ -145,16 +151,17 @@ class AdminController {
   async adminDashboardGET(req: Request, res: Response) {
     const stats = await adminService.getDashboardStats()
     return new OK({
+      message: ADMIN_MESSAGES.DASHBOARD_STATS_FETCHED_SUCCESSFULLY,
       data: stats
     }).send(res)
   }
 
   // User Management
-  async getAllUsers(req: Request, res: Response) {
-    const { status, search, ...paginationQuery } = req.query
+  async getAllUsers(req: Request<ParamsDictionary, unknown, unknown, GetAllUsersReqQuery>, res: Response) {
+    const { verify, search, ...paginationQuery } = req.query
     const result = await adminService.getAllUsers({
       ...paginationQuery,
-      status: status as string,
+      verify: verify as string,
       search: search as string
     })
     return new OK({

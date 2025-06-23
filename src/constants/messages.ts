@@ -122,6 +122,7 @@ export const TOKEN_MESSAGES = {
 } as const
 
 export const ADMIN_MESSAGES = {
+  DASHBOARD_STATS_FETCHED_SUCCESSFULLY: 'Dashboard stats fetched successfully',
   // Authentication
   EMAIL_REQUIRED: 'Email is required',
   EMAIL_INVALID: 'Invalid email format',

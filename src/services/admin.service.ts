@@ -372,11 +372,22 @@ class AdminService {
   }
 
   // User Management
-  async getAllUsers(paginationQuery: PaginationQuery & { status?: string; search?: string }) {
+  async getAllUsers(paginationQuery: PaginationQuery & { verify?: string; search?: string }) {
     const query: Record<string, any> = {}
 
-    if (paginationQuery.status) {
-      query.status = paginationQuery.status
+    if (paginationQuery.verify) {
+      // Map query parameter to enum values
+      if (paginationQuery.verify.toLowerCase() === 'verify' || paginationQuery.verify.toLowerCase() === 'verified') {
+        query.verify = UserVerificationStatus.Verified
+      } else if (
+        paginationQuery.verify.toLowerCase() === 'unverify' ||
+        paginationQuery.verify.toLowerCase() === 'unverified'
+      ) {
+        query.verify = UserVerificationStatus.Unverified
+      } else {
+        // If invalid value, don't filter by verify status
+        query.verify = paginationQuery.verify
+      }
     }
 
     if (paginationQuery.search) {
@@ -522,21 +533,8 @@ class AdminService {
   }
 
   // Notifications
-  async getAllNotifications(page: number = 1, limit: number = 10) {
-    const skip = (page - 1) * limit
-    const [notifications, total] = await Promise.all([
-      databaseServices.notifications.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
-      databaseServices.notifications.countDocuments({})
-    ])
-
-    return {
-      notifications,
-      pagination: {
-        page,
-        limit,
-        total
-      }
-    }
+  async getAllNotifications(paginationQuery: PaginationQuery) {
+    return PaginationUtils.paginate(databaseServices.notifications, {}, { sort: { createdAt: -1 } }, paginationQuery)
   }
 
   async markNotificationAsRead(notificationId: string) {
@@ -641,32 +639,21 @@ class AdminService {
   }
 
   // Transaction Management
-  async getTransactionHistory(page: number = 1, limit: number = 10, filters: any = {}) {
-    const skip = (page - 1) * limit
-    const query: any = {}
+  async getTransactionHistory(
+    paginationQuery: PaginationQuery & { startDate?: string; endDate?: string; type?: string; status?: string }
+  ) {
+    const query: Record<string, any> = {}
 
-    if (filters.startDate || filters.endDate) {
+    if (paginationQuery.startDate || paginationQuery.endDate) {
       query.createdAt = {}
-      if (filters.startDate) query.createdAt.$gte = new Date(filters.startDate)
-      if (filters.endDate) query.createdAt.$lte = new Date(filters.endDate)
+      if (paginationQuery.startDate) query.createdAt.$gte = new Date(paginationQuery.startDate)
+      if (paginationQuery.endDate) query.createdAt.$lte = new Date(paginationQuery.endDate)
     }
 
-    if (filters.type) query.type = filters.type
-    if (filters.status) query.status = filters.status
+    if (paginationQuery.type) query.type = paginationQuery.type
+    if (paginationQuery.status) query.status = paginationQuery.status
 
-    const [transactions, total] = await Promise.all([
-      databaseServices.transactions.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
-      databaseServices.transactions.countDocuments(query)
-    ])
-
-    return {
-      transactions,
-      pagination: {
-        page,
-        limit,
-        total
-      }
-    }
+    return PaginationUtils.paginate(databaseServices.transactions, query, { sort: { createdAt: -1 } }, paginationQuery)
   }
 
   // Dashboard Statistics
@@ -677,38 +664,33 @@ class AdminService {
       databaseServices.transactions.countDocuments({})
     ])
 
-    const recentActivities = await databaseServices.auditLogs.find({}).sort({ createdAt: -1 }).limit(10).toArray()
+    const recentActivitiesPaginated = await PaginationUtils.paginate(
+      databaseServices.auditLogs,
+      {},
+      { sort: { createdAt: -1 } },
+      {
+        page: 1,
+        limit: 20
+      }
+    )
 
     return {
       totalUsers,
       activeUsers,
       totalTransactions,
-      recentActivities
+      recentActivities: recentActivitiesPaginated.items
     }
   }
 
   // Audit Logs
-  async getAuditLogs(page: number = 1, limit: number = 10, filters: any = {}) {
-    const skip = (page - 1) * limit
-    const query: any = {}
+  async getAuditLogs(paginationQuery: PaginationQuery & { action?: string; userId?: string; adminId?: string }) {
+    const query: Record<string, any> = {}
 
-    if (filters.action) query.action = filters.action
-    if (filters.userId) query.userId = new ObjectId(filters.userId)
-    if (filters.adminId) query.adminId = new ObjectId(filters.adminId)
+    if (paginationQuery.action) query.action = paginationQuery.action
+    if (paginationQuery.userId) query.userId = new ObjectId(paginationQuery.userId)
+    if (paginationQuery.adminId) query.adminId = new ObjectId(paginationQuery.adminId)
 
-    const [logs, total] = await Promise.all([
-      databaseServices.auditLogs.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
-      databaseServices.auditLogs.countDocuments(query)
-    ])
-
-    return {
-      logs,
-      pagination: {
-        page,
-        limit,
-        total
-      }
-    }
+    return PaginationUtils.paginate(databaseServices.auditLogs, query, { sort: { createdAt: -1 } }, paginationQuery)
   }
 
   // Category Management

@@ -41,3 +41,10 @@ export interface TransactionFilterReqQuery {
   type?: string
   status?: string
 }
+
+export interface GetAllUsersReqQuery {
+  page?: string
+  limit?: string
+  verify?: 'verify' | 'verified' | 'unverify' | 'unverified'
+  search?: string
+}
