@@ -64,13 +64,15 @@ export interface UpdateMeReqBody {
 export interface ChangePasswordReqBody {
   oldPassword: string
   newPassword: string
-  confirmPassword: string
+  confirmNewPassword: string
 }
 
 export interface SearchUsersReqQuery {
-  query?: string
+  q?: string
   page?: number
   limit?: number
+  sortBy?: 'username' | 'email' | 'phone'
+  sortOrder?: 'ASC' | 'DESC'
 }
 
 export interface UpdateUserPreferencesReqBody {
