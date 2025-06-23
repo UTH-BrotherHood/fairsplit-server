@@ -53,18 +53,22 @@ class AuthController {
       })
     }
 
-    const userData = {
-      _id: userResponse._id,
-      email: userResponse.email,
-      username: userResponse.username,
-      avatar_url: userResponse.avatarUrl,
-      verify: userResponse.verify
+    if (req.headers['x-client-type'] === 'mobile') {
+      new OK({
+        message: 'Login with Google successfully',
+        data: {
+          accessToken,
+          refreshToken,
+          user: userResponse
+        }
+      }).send(res)
+      return
     }
 
     const qs = queryString.stringify({
       accessToken,
       refreshToken,
-      user: encodeURIComponent(JSON.stringify(userData)),
+      user: encodeURIComponent(JSON.stringify(userResponse)),
       status: httpStatusCode.OK
     })
 
