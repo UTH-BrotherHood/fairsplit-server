@@ -9,21 +9,21 @@ import {
 } from '~/models/requests/group.requests'
 import groupService from '~/services/group.service'
 import { GROUP_MESSAGES } from '~/constants/messages'
-import { httpStatusCode } from '~/core/httpStatusCode'
+import { OK } from '~/core/succes.response'
 
 class GroupController {
   async createGroup(req: Request<ParamsDictionary, any, CreateGroupReqBody>, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
-    const result = await groupService.createGroup(user_id, req.body)
-    return res.status(httpStatusCode.CREATED).json({
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const result = await groupService.createGroup(userId, req.body)
+    new OK({
       message: GROUP_MESSAGES.CREATE_GROUP_SUCCESSFULLY,
-      result
-    })
+      data: result
+    }).send(res)
   }
 
   async getMyGroups(req: Request, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
-    const result = await groupService.getMyGroups(user_id)
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const result = await groupService.getMyGroups(userId)
     return res.json({
       message: GROUP_MESSAGES.GET_GROUPS_SUCCESSFULLY,
       result
@@ -31,9 +31,9 @@ class GroupController {
   }
 
   async getGroupById(req: Request, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
+    const { userId } = req.decodedAuthorization as TokenPayload
     const { groupId } = req.params
-    const result = await groupService.getGroupById(user_id, groupId)
+    const result = await groupService.getGroupById(userId, groupId)
     return res.json({
       message: GROUP_MESSAGES.GET_GROUP_SUCCESSFULLY,
       result
@@ -41,19 +41,20 @@ class GroupController {
   }
 
   async updateGroup(req: Request<ParamsDictionary & { groupId: string }, any, UpdateGroupReqBody>, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
+    const { userId } = req.decodedAuthorization as TokenPayload
     const { groupId } = req.params
-    const result = await groupService.updateGroup(user_id, groupId, req.body)
-    return res.json({
+    const result = await groupService.updateGroup(userId, groupId, req.body)
+
+    new OK({
       message: GROUP_MESSAGES.UPDATE_GROUP_SUCCESSFULLY,
-      result
-    })
+      data: result
+    }).send(res)
   }
 
   async deleteGroup(req: Request, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
+    const { userId } = req.decodedAuthorization as TokenPayload
     const { groupId } = req.params
-    const result = await groupService.deleteGroup(user_id, groupId)
+    const result = await groupService.deleteGroup(userId, groupId)
     return res.json({
       message: GROUP_MESSAGES.DELETE_GROUP_SUCCESSFULLY,
       result
@@ -61,9 +62,9 @@ class GroupController {
   }
 
   async addMember(req: Request<ParamsDictionary & { groupId: string }, any, AddMemberReqBody>, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
+    const { userId } = req.decodedAuthorization as TokenPayload
     const { groupId } = req.params
-    const result = await groupService.addMember(user_id, groupId, req.body)
+    const result = await groupService.addMember(userId, groupId, req.body)
     return res.json({
       message: GROUP_MESSAGES.ADD_MEMBER_SUCCESSFULLY,
       result
@@ -74,9 +75,9 @@ class GroupController {
     req: Request<ParamsDictionary & { groupId: string; userId: string }, any, UpdateMemberReqBody>,
     res: Response
   ) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
-    const { groupId, userId } = req.params
-    const result = await groupService.updateMember(user_id, groupId, userId, req.body)
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const { groupId, memberId } = req.params
+    const result = await groupService.updateMember(userId, groupId, memberId, req.body)
     return res.json({
       message: GROUP_MESSAGES.UPDATE_MEMBER_SUCCESSFULLY,
       result
@@ -84,9 +85,9 @@ class GroupController {
   }
 
   async removeMember(req: Request, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
-    const { groupId, userId } = req.params
-    const result = await groupService.removeMember(user_id, groupId, userId)
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const { groupId, memberId } = req.params
+    const result = await groupService.removeMember(userId, groupId, memberId)
     return res.json({
       message: GROUP_MESSAGES.REMOVE_MEMBER_SUCCESSFULLY,
       result

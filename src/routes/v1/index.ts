@@ -3,6 +3,7 @@ import authRoute from './auth.route'
 import adminRoute from './admin.route'
 import userRoute from './user.route'
 import { OK } from '~/core/succes.response'
+import groupRoute from './group.route'
 
 const rootRouterV1 = Router()
 
@@ -20,6 +21,10 @@ const defaultRoutes = [
   {
     path: '/users',
     route: userRoute
+  },
+  {
+    path: '/groups',
+    route: groupRoute
   },
   {
     path: '/admin',

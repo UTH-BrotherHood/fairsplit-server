@@ -13,18 +13,25 @@ import databaseService from './database.services'
 
 class GroupService {
   async createGroup(userId: string, payload: CreateGroupReqBody) {
+    const members = [
+      {
+        userId: new ObjectId(userId),
+        role: GroupRole.Owner,
+        joinedAt: new Date(),
+        nickname: undefined
+      },
+      ...(payload.members || []).map((m) => ({
+        userId: new ObjectId(m.userId),
+        role: m.role || GroupRole.Member,
+        joinedAt: new Date(),
+        nickname: m.nickname
+      }))
+    ]
     const group: IGroup = {
       name: payload.name,
       description: payload.description,
       avatarUrl: payload.avatarUrl,
-      members: [
-        {
-          userId: new ObjectId(userId),
-          role: GroupRole.Owner,
-          joinedAt: new Date(),
-          nickname: payload.ownerNickname
-        }
-      ],
+      members,
       createdAt: new Date(),
       updatedAt: new Date(),
       isArchived: false,
@@ -38,7 +45,10 @@ class GroupService {
 
     const result = await databaseService.groups.insertOne(group)
     await databaseService.users.updateOne({ _id: new ObjectId(userId) }, { $push: { groups: result.insertedId } })
-
+    if (payload.members && payload.members.length > 0) {
+      const otherUserIds = payload.members.map((m) => new ObjectId(m.userId))
+      await databaseService.users.updateMany({ _id: { $in: otherUserIds } }, { $push: { groups: result.insertedId } })
+    }
     return {
       ...group,
       _id: result.insertedId

@@ -1,10 +1,14 @@
-import { GroupRole } from '../schemas/group.schema'
+import { GroupRole, IGroupMember } from '../schemas/group.schema'
 
 export interface CreateGroupReqBody {
   name: string
   description?: string
   avatarUrl?: string
-  ownerNickname?: string
+  members?: Array<{
+    userId: string
+    role?: GroupRole
+    nickname?: string
+  }>
   settings?: {
     allowMembersInvite?: boolean
     allowMembersAddList?: boolean
@@ -32,6 +36,7 @@ export interface AddMemberReqBody {
 }
 
 export interface UpdateMemberReqBody {
+  memberId: string
   role?: GroupRole
   nickname?: string
 }
