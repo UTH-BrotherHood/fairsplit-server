@@ -19,9 +19,9 @@ groupRoute.post('/', accessTokenValidation, createGroupValidation, wrapRequestHa
 
 groupRoute.get('/my-groups', accessTokenValidation, wrapRequestHandler(groupController.getMyGroups))
 
-// groupRoute.use(groupIdValidation)
+groupRoute.use(groupIdValidation)
 
-groupRoute.get('/:groupId', accessTokenValidation, groupIdValidation, wrapRequestHandler(groupController.getGroupById))
+groupRoute.get('/:groupId', accessTokenValidation, wrapRequestHandler(groupController.getGroupById))
 
 groupRoute.patch(
   '/:groupId',
