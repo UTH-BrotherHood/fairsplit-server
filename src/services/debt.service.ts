@@ -3,7 +3,8 @@ import { ErrorWithStatus } from '~/utils/error.utils'
 import { DEBT_MESSAGES } from '~/constants/messages'
 import { httpStatusCode } from '~/core/httpStatusCode'
 import { DebtStatus, Settlement } from '~/models/schemas/debt.schema'
-import { GetDebtsReqQuery, SettleDebtReqBody } from '~/models/requests/debt.requests'
+import { IDebt } from '~/models/schemas/debt.schema'
+import { DebtBodyRequest, GetDebtsReqQuery, SettleDebtReqBody } from '~/models/requests/debt.requests'
 import databaseService from './database.services'
 
 class DebtsService {
@@ -184,6 +185,65 @@ class DebtsService {
     }
 
     return debt.settlements || []
+  }
+
+  async createDebt(userId: string, payload: DebtBodyRequest) {
+    // Kiểm tra user thuộc group
+    await this.checkGroupMembership(userId, payload.groupId)
+
+    // Kiểm tra billId, from.userId, to.userId song song
+    const [bill, fromUser, toUser] = await Promise.all([
+      databaseService.bills.findOne({ _id: new ObjectId(payload.billId) }),
+      databaseService.users.findOne({ _id: new ObjectId(payload.from.userId) }),
+      databaseService.users.findOne({ _id: new ObjectId(payload.to.userId) })
+    ])
+
+    if (!bill) {
+      throw new ErrorWithStatus({
+        message: 'Bill not found',
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+    if (!fromUser) {
+      throw new ErrorWithStatus({
+        message: 'From user not found',
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+    if (!toUser) {
+      throw new ErrorWithStatus({
+        message: 'To user not found',
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+
+    const debt: IDebt = {
+      groupId: new ObjectId(payload.groupId),
+      from: {
+        userId: new ObjectId(payload.from.userId),
+        name: payload.from.name
+      },
+      to: {
+        userId: new ObjectId(payload.to.userId),
+        name: payload.to.name
+      },
+      billId: new ObjectId(payload.billId),
+      amount: payload.amount,
+      remainingAmount: payload.amount,
+      status: DebtStatus.Active,
+      settlements: [],
+      dueDate: payload.dueDate ? new Date(payload.dueDate) : undefined,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      reminderCount: 0,
+      note: payload.note
+    }
+
+    const result = await databaseService.debts.insertOne(debt)
+    return {
+      ...debt,
+      _id: result.insertedId
+    }
   }
 }
 

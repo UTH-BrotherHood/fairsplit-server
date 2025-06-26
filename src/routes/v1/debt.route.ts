@@ -1,11 +1,18 @@
 import { Router } from 'express'
-import { validate } from '~/utils/validation.utils'
-import { checkSchema } from 'express-validator'
 import { accessTokenValidation } from '~/middlewares/auth.middlewares'
 import debtController from '~/controllers/debt.controller'
 import { wrapRequestHandler } from '~/utils/wrapHandler'
+import { groupIdValidation, debtIdValidation } from '~/middlewares/debt.middlewares'
 
 const debtRoute = Router()
+
+/**
+ * @swagger
+ * /api/v1/debts:
+ *   post:
+ *     summary: Create a new debt
+ */
+debtRoute.post('/', accessTokenValidation, wrapRequestHandler(debtController.createDebt))
 
 /**
  * @swagger
@@ -16,16 +23,7 @@ const debtRoute = Router()
 debtRoute.get(
   '/groups/:groupId',
   accessTokenValidation,
-  validate(
-    checkSchema({
-      groupId: {
-        in: ['params'],
-        isString: true,
-        trim: true,
-        notEmpty: true
-      }
-    })
-  ),
+  groupIdValidation,
   wrapRequestHandler(debtController.getGroupDebts)
 )
 
@@ -46,16 +44,7 @@ debtRoute.get('/my-debts', accessTokenValidation, wrapRequestHandler(debtControl
 debtRoute.post(
   '/:debtId/settle',
   accessTokenValidation,
-  validate(
-    checkSchema({
-      debtId: {
-        in: ['params'],
-        isString: true,
-        trim: true,
-        notEmpty: true
-      }
-    })
-  ),
+  debtIdValidation,
   wrapRequestHandler(debtController.settleDebt)
 )
 
@@ -68,16 +57,7 @@ debtRoute.post(
 debtRoute.get(
   '/:debtId/history',
   accessTokenValidation,
-  validate(
-    checkSchema({
-      debtId: {
-        in: ['params'],
-        isString: true,
-        trim: true,
-        notEmpty: true
-      }
-    })
-  ),
+  debtIdValidation,
   wrapRequestHandler(debtController.getDebtHistory)
 )
 

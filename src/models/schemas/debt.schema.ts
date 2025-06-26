@@ -1,5 +1,4 @@
 import { ObjectId } from 'mongodb'
-import { envConfig } from '~/config/env'
 
 export enum DebtStatus {
   Active = 'active',
@@ -25,107 +24,19 @@ export interface DebtParticipant {
 
 export interface IDebt {
   _id?: ObjectId
-  groupId: ObjectId
-  from: DebtParticipant
-  to: DebtParticipant
-  billId: ObjectId
+  groupId: ObjectId // nhóm liên quan đến khoản nợ (nếu có)
+  from: DebtParticipant // Người nợ tiền (debtor)
+  to: DebtParticipant // Người cho vay/người được nhận tiền (creditor)
+  billId: ObjectId // (nếu phát sinh từ bill chia tiền)
   amount: number
-  remainingAmount: number
+  remainingAmount: number // Số tiền còn lại chưa thanh toán (giảm dần khi trả dần)
   status: DebtStatus
-  settlements?: Settlement[]
+  settlements?: Settlement[] // Danh sách các lần thanh toán (trả dần, trả góp, v.v.)
   dueDate?: Date
   createdAt: Date
   updatedAt: Date
   settledAt?: Date
-  lastReminderSentAt?: Date
-  reminderCount: number
-  note?: string
-}
-
-export const DebtModel = {
-  collectionName: envConfig.dbDebtCollection,
-  jsonSchema: {
-    bsonType: 'object',
-    required: [
-      'groupId',
-      'from',
-      'to',
-      'billId',
-      'amount',
-      'remainingAmount',
-      'status',
-      'createdAt',
-      'updatedAt',
-      'reminderCount'
-    ],
-    properties: {
-      _id: { bsonType: 'objectId' },
-      groupId: { bsonType: 'objectId' },
-      from: {
-        bsonType: 'object',
-        required: ['userId', 'name'],
-        properties: {
-          userId: { bsonType: 'objectId' },
-          name: { bsonType: 'string' }
-        }
-      },
-      to: {
-        bsonType: 'object',
-        required: ['userId', 'name'],
-        properties: {
-          userId: { bsonType: 'objectId' },
-          name: { bsonType: 'string' }
-        }
-      },
-      billId: { bsonType: 'objectId' },
-      amount: {
-        bsonType: 'number',
-        minimum: 0
-      },
-      remainingAmount: {
-        bsonType: 'number',
-        minimum: 0
-      },
-      status: {
-        enum: Object.values(DebtStatus)
-      },
-      settlements: {
-        bsonType: 'array',
-        items: {
-          bsonType: 'object',
-          required: ['_id', 'amount', 'method', 'date', 'settledBy'],
-          properties: {
-            _id: { bsonType: 'objectId' },
-            amount: { bsonType: 'number' },
-            method: { bsonType: 'string' },
-            date: { bsonType: 'date' },
-            settledBy: { bsonType: 'objectId' }
-          }
-        }
-      },
-      dueDate: { bsonType: 'date' },
-      createdAt: { bsonType: 'date' },
-      updatedAt: { bsonType: 'date' },
-      settledAt: { bsonType: 'date' },
-      lastReminderSentAt: { bsonType: 'date' },
-      reminderCount: {
-        bsonType: 'int',
-        minimum: 0
-      },
-      note: {
-        bsonType: 'string',
-        maxLength: 500
-      }
-    }
-  },
-  indexes: [
-    { key: { groupId: 1 } },
-    { key: { 'from.userId': 1 } },
-    { key: { 'to.userId': 1 } },
-    { key: { billId: 1 } },
-    { key: { status: 1 } },
-    { key: { dueDate: 1 } },
-    // Compound index for querying debts between two users in a group
-    { key: { groupId: 1, 'from.userId': 1, 'to.userId': 1 } }
-  ]
+  lastReminderSentAt?: Date // Ngày gửi nhắc nhở gần nhất
+  reminderCount: number // Số lần đã gửi nhắc nhở
+  note?: string // Ghi chú thêm về khoản nợ
 }

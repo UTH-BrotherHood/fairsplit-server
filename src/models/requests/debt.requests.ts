@@ -14,3 +14,19 @@ export interface SettleDebtReqBody {
   date: string
   notes?: string
 }
+
+export interface DebtBodyRequest {
+  groupId: string
+  from: {
+    userId: string
+    name: string
+  }
+  to: {
+    userId: string
+    name: string
+  }
+  billId: string
+  amount: number
+  dueDate?: string
+  note?: string
+}
