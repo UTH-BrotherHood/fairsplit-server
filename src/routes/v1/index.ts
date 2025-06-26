@@ -4,6 +4,8 @@ import adminRoute from './admin.route'
 import userRoute from './user.route'
 import { OK } from '~/core/succes.response'
 import groupRoute from './group.route'
+import billRoute from './bill.route'
+import debtRoute from './debt.route'
 
 const rootRouterV1 = Router()
 
@@ -25,6 +27,14 @@ const defaultRoutes = [
   {
     path: '/groups',
     route: groupRoute
+  },
+  {
+    path: '/bills',
+    route: billRoute
+  },
+  {
+    path: '/debts',
+    route: debtRoute
   },
   {
     path: '/admin',
