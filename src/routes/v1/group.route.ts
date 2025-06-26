@@ -19,9 +19,7 @@ groupRoute.post('/', accessTokenValidation, createGroupValidation, wrapRequestHa
 
 groupRoute.get('/my-groups', accessTokenValidation, wrapRequestHandler(groupController.getMyGroups))
 
-groupRoute.use(groupIdValidation)
-
-groupRoute.get('/:groupId', accessTokenValidation, wrapRequestHandler(groupController.getGroupById))
+groupRoute.get('/:groupId', accessTokenValidation, groupIdValidation, wrapRequestHandler(groupController.getGroupById))
 
 groupRoute.patch(
   '/:groupId',
@@ -35,6 +33,13 @@ groupRoute.delete('/:groupId', accessTokenValidation, wrapRequestHandler(groupCo
 /**
  * Group Member Management Routes
  */
+groupRoute.get(
+  '/:groupId/members',
+  accessTokenValidation,
+  groupIdValidation,
+  wrapRequestHandler(groupController.getGroupParticipants)
+)
+
 groupRoute.post(
   '/:groupId/members',
   accessTokenValidation,

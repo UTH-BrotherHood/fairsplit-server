@@ -93,6 +93,16 @@ class GroupController {
       result
     })
   }
+
+  async getGroupParticipants(req: Request, res: Response) {
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const { groupId } = req.params
+    const result = await groupService.getGroupParticipants(userId, groupId)
+    return res.json({
+      message: GROUP_MESSAGES.GET_GROUP_PARTICIPANTS_SUCCESSFULLY,
+      result
+    })
+  }
 }
 
 const groupController = new GroupController()

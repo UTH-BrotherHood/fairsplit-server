@@ -79,17 +79,19 @@ export const createGroupValidation = validate(
 )
 
 export const groupIdValidation = validate(
-  checkSchema({
-    groupId: {
-      in: ['params'],
-      notEmpty: {
-        errorMessage: 'groupId is required in URL params'
-      },
-      isMongoId: {
-        errorMessage: 'groupId must be a valid MongoId in URL params'
+  checkSchema(
+    {
+      groupId: {
+        notEmpty: {
+          errorMessage: 'groupId is required in URL params'
+        },
+        isMongoId: {
+          errorMessage: 'groupId must be a valid MongoId in URL params'
+        }
       }
-    }
-  })
+    },
+    ['params']
+  )
 )
 
 export const updateGroupValidation = validate(

@@ -233,5 +233,6 @@ export const GROUP_MESSAGES = {
   DELETE_GROUP_SUCCESSFULLY: 'Group deleted successfully',
   ADD_MEMBER_SUCCESSFULLY: 'Member added successfully',
   UPDATE_MEMBER_SUCCESSFULLY: 'Member updated successfully',
-  REMOVE_MEMBER_SUCCESSFULLY: 'Member removed successfully'
+  REMOVE_MEMBER_SUCCESSFULLY: 'Member removed successfully',
+  GET_GROUP_PARTICIPANTS_SUCCESSFULLY: 'Get group participants successfully'
 } as const

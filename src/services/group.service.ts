@@ -288,6 +288,27 @@ class GroupService {
 
     return result
   }
+
+  async getGroupParticipants(userId: string, groupId: string) {
+    const group = await databaseService.groups.findOne({
+      _id: new ObjectId(groupId),
+      isArchived: false
+    })
+    if (!group) {
+      throw new ErrorWithStatus({
+        message: GROUP_MESSAGES.GROUP_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+    const member = group.members.find((m) => m.userId.toString() === userId)
+    if (!member) {
+      throw new ErrorWithStatus({
+        message: GROUP_MESSAGES.USER_NOT_IN_GROUP,
+        status: httpStatusCode.FORBIDDEN
+      })
+    }
+    return group.members
+  }
 }
 
 const groupService = new GroupService()
