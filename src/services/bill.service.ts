@@ -11,6 +11,7 @@ import {
   AddPaymentReqBody
 } from '~/models/requests/bill.requests'
 import databaseService from './database.services'
+import databaseServices from './database.services'
 
 class BillService {
   private async checkGroupMembership(userId: string, groupId: string) {
@@ -67,6 +68,16 @@ class BillService {
 
   async createBill(userId: string, payload: CreateBillReqBody) {
     const group = await this.checkGroupMembership(userId, payload.groupId)
+
+    const checkPaidBy =
+      (await databaseServices.users.findOne({ _id: new ObjectId(payload.paidBy) })) &&
+      (await this.checkGroupMembership(payload.paidBy, payload.groupId))
+    if (!checkPaidBy) {
+      throw new ErrorWithStatus({
+        message: BILL_MESSAGES.USER_NOT_IN_GROUP,
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
 
     // Validate participants
     const validParticipants = payload.participants.every((participant) =>
@@ -191,7 +202,8 @@ class BillService {
 
       // Calculate total shares
       const totalShares = payload.participants.reduce((sum, participant) => sum + participant.share, 0)
-      if (payload.splitMethod === 'percentage' && Math.abs(totalShares - 100) > 0.01) {
+      const splitMethod = payload.splitMethod || bill.splitMethod
+      if (splitMethod === 'percentage' && Math.abs(totalShares - 100) > 0.01) {
         throw new ErrorWithStatus({
           message: BILL_MESSAGES.INVALID_PERCENTAGE_SPLIT,
           status: httpStatusCode.BAD_REQUEST

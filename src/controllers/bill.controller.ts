@@ -12,15 +12,9 @@ import { BILL_MESSAGES } from '~/constants/messages'
 import { httpStatusCode } from '~/core/httpStatusCode'
 
 class BillController {
-  private billService: typeof billService
-
-  constructor() {
-    this.billService = billService
-  }
-
   async createBill(req: Request<ParamsDictionary, any, CreateBillReqBody>, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
-    const result = await this.billService.createBill(user_id, req.body)
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const result = await billService.createBill(userId, req.body)
     return res.status(httpStatusCode.CREATED).json({
       message: BILL_MESSAGES.BILL_CREATED_SUCCESSFULLY,
       result
@@ -31,9 +25,9 @@ class BillController {
     req: Request<ParamsDictionary & { groupId: string }, any, any, GetGroupBillsReqQuery>,
     res: Response
   ) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
+    const { userId } = req.decodedAuthorization as TokenPayload
     const { groupId } = req.params
-    const result = await this.billService.getGroupBills(user_id, groupId, req.query)
+    const result = await billService.getGroupBills(userId, groupId, req.query)
     return res.json({
       message: BILL_MESSAGES.GET_BILLS_SUCCESSFULLY,
       result
@@ -41,9 +35,9 @@ class BillController {
   }
 
   async getBillById(req: Request, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
+    const { userId } = req.decodedAuthorization as TokenPayload
     const { billId } = req.params
-    const result = await this.billService.getBillById(user_id, billId)
+    const result = await billService.getBillById(userId, billId)
     return res.json({
       message: BILL_MESSAGES.GET_BILL_SUCCESSFULLY,
       result
@@ -51,9 +45,9 @@ class BillController {
   }
 
   async updateBill(req: Request<ParamsDictionary & { billId: string }, any, UpdateBillReqBody>, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
+    const { userId } = req.decodedAuthorization as TokenPayload
     const { billId } = req.params
-    const result = await this.billService.updateBill(user_id, billId, req.body)
+    const result = await billService.updateBill(userId, billId, req.body)
     return res.json({
       message: BILL_MESSAGES.BILL_UPDATED_SUCCESSFULLY,
       result
@@ -61,9 +55,9 @@ class BillController {
   }
 
   async deleteBill(req: Request, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
+    const { userId } = req.decodedAuthorization as TokenPayload
     const { billId } = req.params
-    const result = await this.billService.deleteBill(user_id, billId)
+    const result = await billService.deleteBill(userId, billId)
     return res.json({
       message: BILL_MESSAGES.BILL_DELETED_SUCCESSFULLY,
       result
@@ -71,9 +65,9 @@ class BillController {
   }
 
   async addPayment(req: Request<ParamsDictionary & { billId: string }, any, AddPaymentReqBody>, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
+    const { userId } = req.decodedAuthorization as TokenPayload
     const { billId } = req.params
-    const result = await this.billService.addPayment(user_id, billId, req.body)
+    const result = await billService.addPayment(userId, billId, req.body)
     return res.json({
       message: BILL_MESSAGES.PAYMENT_ADDED_SUCCESSFULLY,
       result
@@ -81,9 +75,9 @@ class BillController {
   }
 
   async getBillPayments(req: Request, res: Response) {
-    const { user_id } = req.decodedAuthorization as TokenPayload
+    const { userId } = req.decodedAuthorization as TokenPayload
     const { billId } = req.params
-    const result = await this.billService.getBillPayments(user_id, billId)
+    const result = await billService.getBillPayments(userId, billId)
     return res.json({
       message: BILL_MESSAGES.GET_PAYMENTS_SUCCESSFULLY,
       result
