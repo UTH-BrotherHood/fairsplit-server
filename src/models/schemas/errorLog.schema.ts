@@ -13,7 +13,7 @@ export interface IErrorLog {
   stack?: string
   severity: ErrorSeverity
   occurredAt: Date
-  metadata?: Record<string, any>
+  metadata?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
   createdAt?: Date
   updatedAt?: Date
 }
@@ -24,7 +24,7 @@ export class ErrorLog implements IErrorLog {
   stack?: string
   severity: ErrorSeverity
   occurredAt: Date
-  metadata?: Record<string, any>
+  metadata?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
   createdAt?: Date
   updatedAt?: Date
 
