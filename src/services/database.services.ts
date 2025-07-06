@@ -1,7 +1,7 @@
 import { Collection, Db, MongoClient } from 'mongodb'
 import { IToken } from '~/models/schemas/token.schema'
 import { IUser } from '~/models/schemas/user.schema'
-import config from '~/config/env'
+import envConfig from '~/config/env'
 import { IVerificationCode } from '~/models/schemas/verificationCode.schema'
 import { IGroup } from '~/models/schemas/group.schema'
 import { ITransaction } from '~/models/schemas/transaction.schema'
@@ -20,7 +20,7 @@ export class DatabaseServices {
   private db: Db
 
   constructor() {
-    const uri = config.mongodbUri
+    const uri = envConfig.mongodbUri
     if (!uri) {
       throw new Error('MongoDB URI is not provided in environment variables')
     }
@@ -31,7 +31,7 @@ export class DatabaseServices {
       retryWrites: true,
       w: 'majority'
     })
-    this.db = this.client.db(config.dbName)
+    this.db = this.client.db(envConfig.dbName)
   }
 
   async connect() {
@@ -57,59 +57,59 @@ export class DatabaseServices {
   }
 
   get users(): Collection<IUser> {
-    return this.db.collection<IUser>(config.dbUserCollection)
+    return this.db.collection<IUser>(envConfig.dbUserCollection)
   }
 
   get tokens(): Collection<IToken> {
-    return this.db.collection<IToken>(config.dbTokenCollection)
+    return this.db.collection<IToken>(envConfig.dbTokenCollection)
   }
 
   get admins(): Collection<IAdmin> {
-    return this.db.collection<IAdmin>(config.dbAdminCollection)
+    return this.db.collection<IAdmin>(envConfig.dbAdminCollection)
   }
 
   get verificationCodes(): Collection<IVerificationCode> {
-    return this.db.collection<IVerificationCode>(config.dbVerificationCodeCollection)
+    return this.db.collection<IVerificationCode>(envConfig.dbVerificationCodeCollection)
   }
 
   get groups(): Collection<IGroup> {
-    return this.db.collection<IGroup>(config.dbGroupCollection)
+    return this.db.collection<IGroup>(envConfig.dbGroupCollection)
   }
 
   get transactions(): Collection<ITransaction> {
-    return this.db.collection<ITransaction>(config.dbTransactionCollection)
+    return this.db.collection<ITransaction>(envConfig.dbTransactionCollection)
   }
 
   get notifications(): Collection<INotification> {
-    return this.db.collection<INotification>(config.dbNotificationCollection)
+    return this.db.collection<INotification>(envConfig.dbNotificationCollection)
   }
 
   get settings(): Collection<ISetting> {
-    return this.db.collection<ISetting>(config.dbSettingCollection)
+    return this.db.collection<ISetting>(envConfig.dbSettingCollection)
   }
 
   get errorLogs(): Collection<IErrorLog> {
-    return this.db.collection<IErrorLog>(config.dbErrorLogCollection)
+    return this.db.collection<IErrorLog>(envConfig.dbErrorLogCollection)
   }
 
   get auditLogs(): Collection<IAuditLog> {
-    return this.db.collection<IAuditLog>(config.dbAuditLogCollection)
+    return this.db.collection<IAuditLog>(envConfig.dbAuditLogCollection)
   }
 
   get categories(): Collection<ICategory> {
-    return this.db.collection<ICategory>(config.dbCategoryCollection)
+    return this.db.collection<ICategory>(envConfig.dbCategoryCollection)
   }
 
   get bills(): Collection<IBill> {
-    return this.db.collection<IBill>(config.dbBillCollection)
+    return this.db.collection<IBill>(envConfig.dbBillCollection)
   }
 
   get debts(): Collection<IDebt> {
-    return this.db.collection<IDebt>(config.dbDebtCollection)
+    return this.db.collection<IDebt>(envConfig.dbDebtCollection)
   }
 
   get friendRequests(): Collection<IFriendRequest> {
-    return this.db.collection<IFriendRequest>(config.dbFriendRequestCollection)
+    return this.db.collection<IFriendRequest>(envConfig.dbFriendRequestCollection)
   }
 }
 
