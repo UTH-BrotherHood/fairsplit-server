@@ -1,5 +1,4 @@
 import { ObjectId } from 'mongodb'
-import envConfig from '~/config/env'
 
 export enum TokenType {
   AccessToken = 'AccessToken',
@@ -38,29 +37,4 @@ export class Token implements IToken {
     this.createdAt = createdAt
     this.updatedAt = updatedAt
   }
-}
-
-export const TokenModel = {
-  collectionName: envConfig.dbTokenCollection,
-  jsonSchema: {
-    bsonType: 'object',
-    required: ['token', 'type', 'expiresAt'],
-    properties: {
-      _id: { bsonType: 'objectId' },
-      token: { bsonType: 'string' },
-      type: { bsonType: 'string', enum: Object.values(TokenType) },
-      userId: { bsonType: 'objectId' },
-      adminId: { bsonType: 'objectId' },
-      expiresAt: { bsonType: 'date' },
-      createdAt: { bsonType: 'date' },
-      updatedAt: { bsonType: 'date' }
-    }
-  },
-  indexes: [
-    { key: { token: 1 }, unique: true },
-    { key: { type: 1 } },
-    { key: { userId: 1 } },
-    { key: { adminId: 1 } },
-    { key: { expiresAt: 1 } }
-  ]
 }
