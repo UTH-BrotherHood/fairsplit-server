@@ -17,7 +17,7 @@ import { TokenType, Token } from '~/models/schemas/token.schema'
 import { comparePassword, hashPassword } from '~/utils/crypto'
 import { generateVerificationCode } from '~/utils/verification'
 import { VerificationCode, VerificationCodeType } from '~/models/schemas/verificationCode.schema'
-import smsService from './sms.service'
+import smsService from './sms'
 
 const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = 3600 // 1 hour in seconds
 const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = 604800 // 7 days in seconds
@@ -122,7 +122,10 @@ class AuthService {
     const verificationCodeDoc = new VerificationCode({
       userId: result.insertedId,
       code: verificationCode,
-      type: VerificationCodeType.EmailVerification,
+      type:
+        verificationType === UserVerificationType.Email
+          ? VerificationCodeType.EmailVerification
+          : VerificationCodeType.PhoneVerification,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
     })
 

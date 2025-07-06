@@ -4,21 +4,10 @@ export interface ISMSProvider {
   sendSMS(to: string, message: string): Promise<boolean>
 }
 
-// Mock SMS provider for development
-class MockSMSProvider implements ISMSProvider {
-  async sendSMS(to: string, message: string): Promise<boolean> {
-    logger.info('Mock SMS sent', 'MockSMSProvider.sendSMS', '', {
-      to,
-      message
-    })
-    return true
-  }
-}
-
 class SMSService {
   private provider: ISMSProvider
 
-  constructor(provider: ISMSProvider = new MockSMSProvider()) {
+  constructor(provider: ISMSProvider) {
     this.provider = provider
   }
 
@@ -48,5 +37,4 @@ class SMSService {
   }
 }
 
-const smsService = new SMSService()
-export default smsService
+export default SMSService
