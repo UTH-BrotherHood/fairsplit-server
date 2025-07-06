@@ -34,7 +34,7 @@ export class Token implements IToken {
     this.userId = userId
     this.adminId = adminId
     this.expiresAt = expiresAt
-    this.createdAt = createdAt
-    this.updatedAt = updatedAt
+    this.createdAt = createdAt ? new Date(createdAt) : new Date()
+    this.updatedAt = updatedAt ? new Date(updatedAt) : new Date()
   }
 }
