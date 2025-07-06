@@ -1,5 +1,4 @@
 import { ObjectId } from 'mongodb'
-import { envConfig } from '~/config/env'
 
 export enum TransactionType {
   Payment = 'payment',
@@ -40,7 +39,7 @@ export interface ITransaction {
   externalPaymentId?: string
   userId: ObjectId
   description?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export class Transaction implements ITransaction {
@@ -61,7 +60,7 @@ export class Transaction implements ITransaction {
   completedAt?: Date
   externalPaymentId?: string
   description?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 
   constructor({
     amount,
@@ -100,40 +99,4 @@ export class Transaction implements ITransaction {
     this.description = description
     this.metadata = metadata
   }
-}
-
-export const TransactionModel = {
-  collectionName: envConfig.dbTransactionCollection,
-  jsonSchema: {
-    bsonType: 'object',
-    required: ['amount', 'type', 'status', 'userId', 'groupId'],
-    properties: {
-      _id: { bsonType: 'objectId' },
-      amount: { bsonType: 'number' },
-      type: { bsonType: 'string', enum: Object.values(TransactionType) },
-      status: { bsonType: 'string', enum: Object.values(TransactionStatus) },
-      userId: { bsonType: 'objectId' },
-      groupId: { bsonType: 'objectId' },
-      billId: { bsonType: 'objectId' },
-      fromUserId: { bsonType: 'objectId' },
-      toUserId: { bsonType: 'objectId' },
-      paymentMethod: { bsonType: 'string', enum: Object.values(PaymentMethod) },
-      paymentProof: { bsonType: 'string', pattern: '^https?://' },
-      note: { bsonType: 'string', maxLength: 500 },
-      createdAt: { bsonType: 'date' },
-      updatedAt: { bsonType: 'date' },
-      completedAt: { bsonType: 'date' },
-      externalPaymentId: { bsonType: 'string', maxLength: 100 },
-      description: { bsonType: 'string' },
-      metadata: { bsonType: 'object' }
-    }
-  },
-  indexes: [
-    { key: { userId: 1 } },
-    { key: { groupId: 1 } },
-    { key: { status: 1 } },
-    { key: { type: 1 } },
-    { key: { createdAt: -1 } },
-    { key: { externalPaymentId: 1 }, sparse: true }
-  ]
 }
