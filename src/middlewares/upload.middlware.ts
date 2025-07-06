@@ -15,7 +15,7 @@ export const uploadMiddleware = wrapRequestHandler(
 
       const {
         uploadService = envConfig.defaultUploadService,
-        folder = 'Resumate/User/Avatar',
+        folder = 'Fairsplit/User/Avatar',
         fileType = req.file?.mimetype?.startsWith('image/') ? 'image' : 'raw'
       } = req.body
 
