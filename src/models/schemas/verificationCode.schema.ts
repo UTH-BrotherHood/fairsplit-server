@@ -1,5 +1,4 @@
 import { ObjectId } from 'mongodb'
-import envConfig from '~/config/env'
 
 export enum VerificationCodeType {
   EmailVerification = 'EmailVerification',
