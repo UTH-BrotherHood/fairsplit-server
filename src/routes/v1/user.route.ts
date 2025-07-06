@@ -3,7 +3,6 @@ import userController from '~/controllers/user.controller'
 import { accessTokenValidation } from '~/middlewares/auth.middlewares'
 import {
   changePasswordValidation,
-  searchUsersValidation,
   userPreferencesValidation,
   updatePrivacySettingsValidation,
   blockUserValidation,
