@@ -77,7 +77,6 @@ class GroupService {
       { page, limit }
     )
 
-    // collect unique userIds from all group.members
     const uniqueUserIds = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId.toString())))]
 
     const users = await databaseService.users
@@ -207,6 +206,12 @@ class GroupService {
         status: httpStatusCode.INTERNAL_SERVER_ERROR
       })
     }
+
+    // Remove group from all members
+    await databaseService.users.updateMany(
+      { groups: new ObjectId(groupId) },
+      { $pull: { groups: new ObjectId(groupId) } }
+    )
 
     return true
   }
