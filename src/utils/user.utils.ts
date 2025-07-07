@@ -16,6 +16,56 @@ export const excludeSensitiveFields = (
   return userWithoutSensitiveData
 }
 
+export const excludeSensitiveFieldsForAnotherUser = (
+  user: any
+): Omit<
+  IUser,
+  | 'groups'
+  | 'verificationType'
+  | 'friends'
+  | 'friendRequests'
+  | 'blockedUsers'
+  | 'preferences'
+  | 'settings'
+  | 'notifications'
+  | 'google'
+  | 'facebook'
+  | 'twitter'
+  | 'privacySettings'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'hashPassword'
+  | 'dateOfBirth'
+  | 'verify'
+  | 'forgotPasswordToken'
+  | 'emailVerifyToken'
+  | 'forgotPassword'
+> => {
+  const {
+    dateOfBirth,
+    hashPassword,
+    forgotPasswordToken,
+    emailVerifyToken,
+    forgotPassword,
+    groups,
+    verificationType,
+    friends,
+    friendRequests,
+    blockedUsers,
+    preferences,
+    settings,
+    notifications,
+    google,
+    facebook,
+    twitter,
+    privacySettings,
+    createdAt,
+    updatedAt,
+    ...userWithoutSensitiveData
+  } = user
+  return userWithoutSensitiveData
+}
+
 /**
  * Get user by ID with sensitive fields excluded
  * This is a common utility function that can be used across the application
