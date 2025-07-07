@@ -38,6 +38,11 @@ export const envConfig = {
   smtpUser: process.env.SMTP_USER as string,
   smtpPassword: process.env.SMTP_PASSWORD as string,
 
+  // OTP Configuration
+  twilioAccountSid: process.env.TWILIO_ACCOUNT_SID as string,
+  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN as string,
+  twilioServiceSid: process.env.TWILIO_SERVICE_SID as string,
+
   // google oauth20
   googleClientId: process.env.GOOGLE_CLIENT_ID as string,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET as string,

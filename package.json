@@ -48,6 +48,7 @@
     "passport-google-oauth20": "^2.0.0",
     "redis": "^5.5.5",
     "sharp": "^0.34.2",
+    "twilio": "^5.7.2",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
