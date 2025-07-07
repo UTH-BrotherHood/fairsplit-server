@@ -1,9 +1,6 @@
-import { checkSchema, param } from 'express-validator'
+import { checkSchema } from 'express-validator'
 import { validate } from '~/utils/validation.utils'
 import { GroupRole } from '~/models/schemas/group.schema'
-import { GROUP_MESSAGES } from '~/constants/messages'
-import { NextFunction, Request, Response } from 'express'
-import databaseService from '~/services/database.services'
 import { ObjectId } from 'mongodb'
 
 export const createGroupValidation = validate(
@@ -30,24 +27,31 @@ export const createGroupValidation = validate(
     },
     members: {
       optional: true,
-      isArray: true
-    },
-    'members.*.userId': {
-      optional: true,
-      isMongoId: true
-    },
-    'members.*.role': {
-      optional: true,
-      isIn: {
-        options: [Object.values(GroupRole)]
-      }
-    },
-    'members.*.nickname': {
-      optional: true,
-      isString: true,
-      trim: true,
-      isLength: {
-        options: { max: 50 }
+      isArray: {
+        errorMessage: 'members must be an array of objects'
+      },
+      custom: {
+        options: (members) => {
+          if (!Array.isArray(members)) return true
+          for (const member of members) {
+            if (typeof member !== 'object' || member === null) {
+              throw new Error('Each member must be an object')
+            }
+            if (!member.userId) {
+              throw new Error('Each member must have a userId')
+            }
+            if (!ObjectId.isValid(member.userId)) {
+              throw new Error('Each member.userId must be a valid MongoId')
+            }
+            if (member.role && !Object.values(GroupRole).includes(member.role)) {
+              throw new Error('Each member.role must be a valid GroupRole')
+            }
+            if (member.nickname && (typeof member.nickname !== 'string' || member.nickname.length > 50)) {
+              throw new Error('Each member.nickname must be a string with max 50 characters')
+            }
+          }
+          return true
+        }
       }
     },
     settings: {
@@ -146,22 +150,31 @@ export const updateGroupValidation = validate(
 
 export const addMemberValidation = validate(
   checkSchema({
-    userId: {
-      notEmpty: true,
-      isMongoId: true
-    },
-    role: {
-      optional: true,
-      isIn: {
-        options: [Object.values(GroupRole)]
-      }
-    },
-    nickname: {
-      optional: true,
-      isString: true,
-      trim: true,
-      isLength: {
-        options: { max: 50 }
+    members: {
+      in: ['body'],
+      isArray: {
+        errorMessage: 'members must be an array'
+      },
+      custom: {
+        options: (members) => {
+          if (!Array.isArray(members) || members.length === 0) {
+            throw new Error('members must be a non-empty array')
+          }
+
+          for (const member of members) {
+            if (typeof member.userId !== 'string' || !/^[a-f\d]{24}$/i.test(member.userId)) {
+              throw new Error('Each member.userId must be a valid MongoId')
+            }
+            if (member.role && !Object.values(GroupRole).includes(member.role)) {
+              throw new Error(`Invalid role: ${member.role}`)
+            }
+            if (member.nickname && (typeof member.nickname !== 'string' || member.nickname.length > 50)) {
+              throw new Error('Nickname must be a string under 50 characters')
+            }
+          }
+
+          return true
+        }
       }
     }
   })

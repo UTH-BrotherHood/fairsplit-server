@@ -10,6 +10,9 @@ import {
   UpdateMemberReqBody
 } from '~/models/requests/group.requests'
 import databaseService from './database.services'
+import { excludeSensitiveFieldsForAnotherUser } from '~/utils/user.utils'
+import { PaginationUtils } from '~/utils/pagination.utils'
+import { PaginationQuery } from '~/models/interfaces/pagination.interface'
 
 class GroupService {
   async createGroup(userId: string, payload: CreateGroupReqBody) {
@@ -39,7 +42,7 @@ class GroupService {
         allowMembersInvite: payload.settings?.allowMembersInvite ?? true,
         allowMembersAddList: payload.settings?.allowMembersAddList ?? true,
         defaultSplitMethod: payload.settings?.defaultSplitMethod ?? 'equal',
-        currency: payload.settings?.currency ?? 'USD'
+        currency: payload.settings?.currency ?? 'VND'
       }
     }
 
@@ -55,15 +58,46 @@ class GroupService {
     }
   }
 
-  async getMyGroups(userId: string) {
-    const groups = await databaseService.groups
-      .find({
-        'members.userId': new ObjectId(userId),
-        isArchived: false
-      })
+  async getMyGroups(userId: string, query: PaginationQuery & { search?: string }) {
+    const { page, limit } = PaginationUtils.normalizeQueryParams(query)
+
+    const mongoQuery: any = {
+      'members.userId': new ObjectId(userId),
+      isArchived: false
+    }
+
+    if (query.search) {
+      mongoQuery.name = { $regex: query.search, $options: 'i' }
+    }
+
+    const { items: groups, pagination } = await PaginationUtils.paginate(
+      databaseService.groups,
+      mongoQuery,
+      { sort: { updatedAt: -1 } },
+      { page, limit }
+    )
+
+    // collect unique userIds from all group.members
+    const uniqueUserIds = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId.toString())))]
+
+    const users = await databaseService.users
+      .find({ _id: { $in: uniqueUserIds.map((id) => new ObjectId(id)) } })
       .toArray()
 
-    return groups
+    const userMap = new Map(users.map((u) => [u._id.toString(), excludeSensitiveFieldsForAnotherUser(u)]))
+
+    const result = groups.map((group) => ({
+      ...group,
+      members: group.members.map((m) => ({
+        ...m,
+        user: userMap.get(m.userId.toString()) || null
+      }))
+    }))
+
+    return {
+      items: result,
+      pagination
+    }
   }
 
   async getGroupById(userId: string, groupId: string) {
@@ -80,7 +114,22 @@ class GroupService {
       })
     }
 
-    return group
+    // Lấy danh sách userIds từ group.members
+    const userIds = group.members.map((m) => m.userId.toString())
+
+    const users = await databaseService.users.find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } }).toArray()
+
+    const userMap = new Map(users.map((u) => [u._id.toString(), excludeSensitiveFieldsForAnotherUser(u)]))
+
+    const membersWithUserInfo = group.members.map((m) => ({
+      ...m,
+      user: userMap.get(m.userId.toString()) || null
+    }))
+
+    return {
+      ...group,
+      members: membersWithUserInfo
+    }
   }
 
   private async checkGroupPermission(userId: string, groupId: string, requiredRole: GroupRole[]) {
@@ -165,33 +214,36 @@ class GroupService {
   async addMember(userId: string, groupId: string, payload: AddMemberReqBody) {
     const group = await this.checkGroupPermission(userId, groupId, [GroupRole.Owner, GroupRole.Admin])
 
-    const memberExists = group.members.some((member) => member.userId.toString() === payload.userId)
-    if (memberExists) {
+    const newMembers = payload.members.filter((newMember) => {
+      return !group.members.some((existing) => existing.userId.toString() === newMember.userId)
+    })
+
+    if (newMembers.length === 0) {
       throw new ErrorWithStatus({
         message: GROUP_MESSAGES.USER_ALREADY_IN_GROUP,
         status: httpStatusCode.BAD_REQUEST
       })
     }
 
+    const membersToAdd = newMembers.map((m) => ({
+      userId: new ObjectId(m.userId),
+      role: m.role || GroupRole.Member,
+      nickname: m.nickname,
+      joinedAt: new Date()
+    }))
+
     const result = await databaseService.groups.findOneAndUpdate(
       { _id: new ObjectId(groupId) },
       {
-        $push: {
-          members: {
-            userId: new ObjectId(payload.userId),
-            role: payload.role || GroupRole.Member,
-            joinedAt: new Date(),
-            nickname: payload.nickname
-          }
-        },
+        $push: { members: { $each: membersToAdd } },
         $set: { updatedAt: new Date() }
       },
       { returnDocument: 'after' }
     )
 
-    await databaseService.users.updateOne(
-      { _id: new ObjectId(payload.userId) },
-      { $push: { groups: new ObjectId(groupId) } }
+    await databaseService.users.updateMany(
+      { _id: { $in: membersToAdd.map((m) => m.userId) } },
+      { $addToSet: { groups: new ObjectId(groupId) } }
     )
 
     return result
@@ -294,20 +346,32 @@ class GroupService {
       _id: new ObjectId(groupId),
       isArchived: false
     })
+
     if (!group) {
       throw new ErrorWithStatus({
         message: GROUP_MESSAGES.GROUP_NOT_FOUND,
         status: httpStatusCode.NOT_FOUND
       })
     }
-    const member = group.members.find((m) => m.userId.toString() === userId)
-    if (!member) {
+
+    const isMember = group.members.some((m) => m.userId.toString() === userId)
+    if (!isMember) {
       throw new ErrorWithStatus({
         message: GROUP_MESSAGES.USER_NOT_IN_GROUP,
         status: httpStatusCode.FORBIDDEN
       })
     }
-    return group.members
+
+    const userIds = group.members.map((m) => m.userId.toString())
+
+    const users = await databaseService.users.find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } }).toArray()
+
+    const userMap = new Map(users.map((u) => [u._id.toString(), excludeSensitiveFieldsForAnotherUser(u)]))
+
+    return group.members.map((m) => ({
+      ...m,
+      user: userMap.get(m.userId.toString()) || null
+    }))
   }
 }
 

@@ -5,7 +5,8 @@ import {
   CreateGroupReqBody,
   UpdateGroupReqBody,
   AddMemberReqBody,
-  UpdateMemberReqBody
+  UpdateMemberReqBody,
+  GetMyGroupsQuery
 } from '~/models/requests/group.requests'
 import groupService from '~/services/group.service'
 import { GROUP_MESSAGES } from '~/constants/messages'
@@ -21,12 +22,13 @@ class GroupController {
     }).send(res)
   }
 
-  async getMyGroups(req: Request, res: Response) {
+  async getMyGroups(req: Request<any, any, any, GetMyGroupsQuery>, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
-    const result = await groupService.getMyGroups(userId)
+    const result = await groupService.getMyGroups(userId, req.query)
+
     return res.json({
       message: GROUP_MESSAGES.GET_GROUPS_SUCCESSFULLY,
-      result
+      ...result
     })
   }
 
