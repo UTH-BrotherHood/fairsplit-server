@@ -236,3 +236,16 @@ export const GROUP_MESSAGES = {
   REMOVE_MEMBER_SUCCESSFULLY: 'Member removed successfully',
   GET_GROUP_PARTICIPANTS_SUCCESSFULLY: 'Get group participants successfully'
 } as const
+
+export const SHOPPING_LIST_MESSAGES = {
+  LIST_CREATED: 'Shopping list created successfully',
+  LIST_FETCHED: 'Shopping lists fetched successfully',
+  LIST_DETAIL_FETCHED: 'Shopping list details fetched successfully',
+  LIST_UPDATED: 'Shopping list updated successfully',
+  LIST_DELETED: 'Shopping list deleted successfully',
+  ITEM_ADDED: 'Item added to shopping list successfully',
+  ITEM_UPDATED: 'Item updated successfully',
+  ITEM_DELETED: 'Item deleted from shopping list successfully',
+  ITEM_MARKED_PURCHASED: 'Item marked as purchased successfully',
+  LIST_MARKED_COMPLETED: 'Shopping list marked as completed successfully'
+} as const
