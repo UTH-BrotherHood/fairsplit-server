@@ -1,4 +1,4 @@
-import { BillStatus } from '../schemas/bill.schema'
+import { BillStatus, IBillPayment } from '../schemas/bill.schema'
 
 export interface CreateBillReqBody {
   groupId: string
@@ -12,8 +12,9 @@ export interface CreateBillReqBody {
   paidBy: string
   participants: Array<{
     userId: string
-    share: number
+    share?: number // required if percentage
   }>
+  payments: IBillPayment[]
 }
 
 export interface UpdateBillReqBody {
@@ -23,9 +24,9 @@ export interface UpdateBillReqBody {
   date?: string
   category?: string
   splitMethod?: 'equal' | 'percentage'
-  participants?: Array<{
+  participants: Array<{
     userId: string
-    share: number
+    share?: number // required if percentage
   }>
 }
 

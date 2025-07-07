@@ -9,16 +9,16 @@ import {
 } from '~/models/requests/bill.requests'
 import billService from '~/services/bill.service'
 import { BILL_MESSAGES } from '~/constants/messages'
-import { httpStatusCode } from '~/core/httpStatusCode'
+import { OK } from '~/core/succes.response'
 
 class BillController {
   async createBill(req: Request<ParamsDictionary, any, CreateBillReqBody>, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
     const result = await billService.createBill(userId, req.body)
-    return res.status(httpStatusCode.CREATED).json({
+    new OK({
       message: BILL_MESSAGES.BILL_CREATED_SUCCESSFULLY,
-      result
-    })
+      data: result
+    }).send(res)
   }
 
   async getGroupBills(

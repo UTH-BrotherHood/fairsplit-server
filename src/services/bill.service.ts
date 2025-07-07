@@ -3,7 +3,7 @@ import { ErrorWithStatus } from '~/utils/error.utils'
 import { BILL_MESSAGES } from '~/constants/messages'
 import { httpStatusCode } from '~/core/httpStatusCode'
 import { GroupRole } from '~/models/schemas/group.schema'
-import { BillStatus } from '~/models/schemas/bill.schema'
+import { BillStatus, IBill, IBillPayment } from '~/models/schemas/bill.schema'
 import {
   CreateBillReqBody,
   UpdateBillReqBody,
@@ -12,7 +12,7 @@ import {
 } from '~/models/requests/bill.requests'
 import databaseService from './database.services'
 import databaseServices from './database.services'
-
+import { calculateParticipantSharesAndAmounts } from '~/utils/bill.utils'
 class BillService {
   private async checkGroupMembership(userId: string, groupId: string) {
     const group = await databaseService.groups.findOne({
@@ -69,9 +69,11 @@ class BillService {
   async createBill(userId: string, payload: CreateBillReqBody) {
     const group = await this.checkGroupMembership(userId, payload.groupId)
 
+    // Kiểm tra paidBy có trong group không
     const checkPaidBy =
       (await databaseServices.users.findOne({ _id: new ObjectId(payload.paidBy) })) &&
       (await this.checkGroupMembership(payload.paidBy, payload.groupId))
+
     if (!checkPaidBy) {
       throw new ErrorWithStatus({
         message: BILL_MESSAGES.USER_NOT_IN_GROUP,
@@ -79,10 +81,10 @@ class BillService {
       })
     }
 
-    // Validate participants
-    const validParticipants = payload.participants.every((participant) =>
-      group.members.some((member) => member.userId.toString() === participant.userId)
-    )
+    const validParticipants = payload.participants.every((participant) => {
+      const isValid = group.members.some((member) => member.userId.toString() === participant.userId.toString())
+      return isValid
+    })
 
     if (!validParticipants) {
       throw new ErrorWithStatus({
@@ -91,14 +93,30 @@ class BillService {
       })
     }
 
-    // Calculate total shares
-    const totalShares = payload.participants.reduce((sum, participant) => sum + participant.share, 0)
-    if (payload.splitMethod === 'percentage' && Math.abs(totalShares - 100) > 0.01) {
-      throw new ErrorWithStatus({
-        message: BILL_MESSAGES.INVALID_PERCENTAGE_SPLIT,
-        status: httpStatusCode.BAD_REQUEST
-      })
-    }
+    // Chuẩn hóa payments
+    const payments = (payload.payments || []).map((p) => ({
+      _id: new ObjectId(),
+      amount: p.amount,
+      paidBy: new ObjectId(p.paidBy),
+      paidTo: new ObjectId(p.paidTo),
+      date: new Date(p.date),
+      method: p.method,
+      notes: p.notes,
+      createdBy: new ObjectId(userId),
+      createdAt: new Date(p.createdAt || Date.now())
+    }))
+
+    const rawParticipants = payload.participants.map((p) => ({
+      userId: new ObjectId(p.userId),
+      share: p.share // required if percentage
+    }))
+
+    const participants = calculateParticipantSharesAndAmounts({
+      participants: rawParticipants,
+      splitMethod: payload.splitMethod,
+      amount: payload.amount,
+      payments
+    })
 
     const bill = {
       groupId: new ObjectId(payload.groupId),
@@ -110,12 +128,9 @@ class BillService {
       category: payload.category,
       splitMethod: payload.splitMethod,
       paidBy: new ObjectId(payload.paidBy),
-      participants: payload.participants.map((participant) => ({
-        userId: new ObjectId(participant.userId),
-        share: participant.share
-      })),
+      participants,
       status: BillStatus.Pending,
-      payments: [],
+      payments,
       createdBy: new ObjectId(userId),
       createdAt: new Date(),
       updatedAt: new Date()
@@ -179,7 +194,6 @@ class BillService {
   async updateBill(userId: string, billId: string, payload: UpdateBillReqBody) {
     const { bill, group, member } = await this.checkBillPermission(userId, billId)
 
-    // Only bill creator, group owner, or admin can update the bill
     if (bill.createdBy.toString() !== userId && ![GroupRole.Owner, GroupRole.Admin].includes(member.role)) {
       throw new ErrorWithStatus({
         message: BILL_MESSAGES.NOT_BILL_CREATOR,
@@ -187,25 +201,15 @@ class BillService {
       })
     }
 
+    // Validate participants nếu có
     if (payload.participants) {
-      // Validate participants
-      const validParticipants = payload.participants.every((participant) =>
-        group.members.some((member) => member.userId.toString() === participant.userId)
+      const validParticipants = payload.participants.every((p) =>
+        group.members.some((m) => m.userId.toString() === p.userId.toString())
       )
 
       if (!validParticipants) {
         throw new ErrorWithStatus({
           message: BILL_MESSAGES.INVALID_PARTICIPANTS,
-          status: httpStatusCode.BAD_REQUEST
-        })
-      }
-
-      // Calculate total shares
-      const totalShares = payload.participants.reduce((sum, participant) => sum + participant.share, 0)
-      const splitMethod = payload.splitMethod || bill.splitMethod
-      if (splitMethod === 'percentage' && Math.abs(totalShares - 100) > 0.01) {
-        throw new ErrorWithStatus({
-          message: BILL_MESSAGES.INVALID_PERCENTAGE_SPLIT,
           status: httpStatusCode.BAD_REQUEST
         })
       }
@@ -218,14 +222,31 @@ class BillService {
       ...(payload.date && { date: new Date(payload.date) }),
       ...(payload.category && { category: payload.category }),
       ...(payload.splitMethod && { splitMethod: payload.splitMethod }),
-      ...(payload.participants && {
-        participants: payload.participants.map((participant) => ({
-          userId: new ObjectId(participant.userId),
-          share: participant.share
-        }))
-      }),
       updatedAt: new Date()
     }
+
+    const newSplitMethod = payload.splitMethod || bill.splitMethod
+    const newAmount = payload.amount || bill.amount
+
+    const rawParticipants = (
+      payload.participants ||
+      bill.participants.map((p) => ({
+        userId: p.userId.toString(),
+        share: p.share
+      }))
+    ).map((p) => ({
+      userId: new ObjectId(p.userId),
+      share: p.share
+    }))
+
+    const participants = calculateParticipantSharesAndAmounts({
+      participants: rawParticipants,
+      splitMethod: newSplitMethod,
+      amount: newAmount,
+      payments: bill.payments
+    })
+
+    updateData.participants = participants
 
     const result = await databaseService.bills.findOneAndUpdate(
       { _id: new ObjectId(billId) },
@@ -261,7 +282,6 @@ class BillService {
   async addPayment(userId: string, billId: string, payload: AddPaymentReqBody) {
     const { bill, group } = await this.checkBillPermission(userId, billId)
 
-    // Validate paidBy and paidTo are group members
     const validUsers = [payload.paidBy, payload.paidTo].every((userId) =>
       group.members.some((member) => member.userId.toString() === userId)
     )
@@ -300,7 +320,7 @@ class BillService {
     return result
   }
 
-  private calculateBillStatus(bill: any, payments: any[]) {
+  private calculateBillStatus(bill: IBill, payments: IBillPayment[]) {
     const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0)
 
     if (totalPaid === 0) return BillStatus.Pending

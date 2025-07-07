@@ -10,6 +10,7 @@ export enum BillStatus {
 export interface IBillParticipant {
   userId: ObjectId
   share: number
+  amountOwed: number
 }
 
 export interface IBillPayment {
@@ -85,7 +86,7 @@ export class Bill implements IBill {
     this.currency = currency
     this.date = date
     this.category = category
-    this.splitMethod = splitMethod
+    this.splitMethod = splitMethod ? splitMethod : 'equal'
     this.paidBy = paidBy
     this.participants = participants
     this.status = status

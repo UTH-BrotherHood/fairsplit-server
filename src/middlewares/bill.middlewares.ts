@@ -55,19 +55,38 @@ export const createBillValidation = validate(
       isMongoId: true
     },
     participants: {
-      isArray: true,
+      optional: true,
+      isArray: {
+        errorMessage: 'participants must be an array of userId strings'
+      },
       custom: {
-        options: (value) => value && value.length > 0
-      }
-    },
-    'participants.*.userId': {
-      notEmpty: true,
-      isMongoId: true
-    },
-    'participants.*.share': {
-      notEmpty: true,
-      isFloat: {
-        options: { min: 0 }
+        options: (participants, { req }) => {
+          if (!Array.isArray(participants)) throw new Error('participants must be an array')
+          if (participants.length === 0) throw new Error('participants must not be empty')
+
+          const isPercentage = req.body.splitMethod === 'percentage'
+          let totalShare = 0
+
+          for (const p of participants) {
+            if (!p.userId || typeof p.userId !== 'string') {
+              throw new Error('Each participant must have a valid userId')
+            }
+
+            if (isPercentage) {
+              if (typeof p.share !== 'number' || p.share < 0) {
+                throw new Error('Each participant must have a non-negative share when splitMethod is percentage')
+              }
+              totalShare += p.share
+            }
+          }
+
+          // Check tổng % phải ≈ 100 nếu là percentage
+          if (isPercentage && Math.abs(totalShare - 100) > 0.01) {
+            throw new Error('Total share must equal 100% when using percentage split')
+          }
+
+          return true
+        }
       }
     }
   })
@@ -157,19 +176,37 @@ export const updateBillValidation = validate(
     },
     participants: {
       optional: true,
-      isArray: true,
+      isArray: {
+        errorMessage: 'participants must be an array of userId strings'
+      },
       custom: {
-        options: (value) => !value || value.length > 0
-      }
-    },
-    'participants.*.userId': {
-      optional: true,
-      isMongoId: true
-    },
-    'participants.*.share': {
-      optional: true,
-      isFloat: {
-        options: { min: 0 }
+        options: (participants, { req }) => {
+          if (!Array.isArray(participants)) throw new Error('participants must be an array')
+          if (participants.length === 0) throw new Error('participants must not be empty')
+
+          const isPercentage = req.body.splitMethod === 'percentage'
+          let totalShare = 0
+
+          for (const p of participants) {
+            if (!p.userId || typeof p.userId !== 'string') {
+              throw new Error('Each participant must have a valid userId')
+            }
+
+            if (isPercentage) {
+              if (typeof p.share !== 'number' || p.share < 0) {
+                throw new Error('Each participant must have a non-negative share when splitMethod is percentage')
+              }
+              totalShare += p.share
+            }
+          }
+
+          // Check tổng % phải ≈ 100 nếu là percentage
+          if (isPercentage && Math.abs(totalShare - 100) > 0.01) {
+            throw new Error('Total share must equal 100% when using percentage split')
+          }
+
+          return true
+        }
       }
     }
   })
