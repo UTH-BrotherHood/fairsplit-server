@@ -6,6 +6,7 @@ import { OK } from '~/core/succes.response'
 import groupRoute from './group.route'
 import billRoute from './bill.route'
 import debtRoute from './debt.route'
+import shoppingListRoute from './shoppingList.route'
 
 const rootRouterV1 = Router()
 
@@ -35,6 +36,10 @@ const defaultRoutes = [
   {
     path: '/debts',
     route: debtRoute
+  },
+  {
+    path: '/shopping-lists',
+    route: shoppingListRoute
   },
   {
     path: '/admin',

@@ -14,6 +14,7 @@ import { ICategory } from '~/models/schemas/category.schema'
 import { IBill } from '~/models/schemas/bill.schema'
 import { IFriendRequest } from '~/models/schemas/friendRequest.schema'
 import { IDebt } from '~/models/schemas/debt.schema'
+import { IShoppingList } from '~/models/schemas/shoppingList.schema'
 
 export class DatabaseServices {
   private client: MongoClient
@@ -106,6 +107,10 @@ export class DatabaseServices {
 
   get debts(): Collection<IDebt> {
     return this.db.collection<IDebt>(envConfig.dbDebtCollection)
+  }
+
+  get shoppingLists(): Collection<IShoppingList> {
+    return this.db.collection<IShoppingList>(envConfig.dbShoppingListCollection)
   }
 
   get friendRequests(): Collection<IFriendRequest> {
