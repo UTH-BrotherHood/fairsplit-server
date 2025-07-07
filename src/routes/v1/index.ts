@@ -9,7 +9,7 @@ import debtRoute from './debt.route'
 
 const rootRouterV1 = Router()
 
-rootRouterV1.get('/health', (_req, res) => {
+rootRouterV1.get('/healthz', (_req, res) => {
   new OK({
     message: 'Welcome to FairSplit API'
   }).send(res)
