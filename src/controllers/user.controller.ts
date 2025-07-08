@@ -13,6 +13,14 @@ import userService from '~/services/user.service'
 import { USER_MESSAGES } from '~/constants/messages'
 import { ObjectId } from 'mongodb'
 import { OK } from '~/core/succes.response'
+import userAnalyticsService from '~/services/userAnalytics.service'
+
+// Helper to safely extract string from query params
+function getStringParam(param: any): string | undefined {
+  if (typeof param === 'string') return param
+  if (Array.isArray(param)) return param[0]
+  return undefined
+}
 
 class UserController {
   async getMe(req: Request, res: Response) {
@@ -206,6 +214,54 @@ class UserController {
     const result = await userService.getUserStatistics(userId)
     new OK({
       message: USER_MESSAGES.GET_USER_STATISTICS_SUCCESSFULLY,
+      data: result
+    }).send(res)
+  }
+
+  async getAnalyticsOverview(req: Request, res: Response) {
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const groupId = getStringParam(req.query.groupId)
+    const result = await userAnalyticsService.getUserAnalyticsOverview(userId, groupId)
+    new OK({
+      message: 'Lấy tổng quan chi tiêu thành công',
+      data: result
+    }).send(res)
+  }
+
+  async getAnalyticsMonthly(req: Request, res: Response) {
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const groupId = getStringParam(req.query.groupId)
+    const year = getStringParam(req.query.year)
+    const result = await userAnalyticsService.getUserAnalyticsMonthly(userId, groupId, year)
+    new OK({
+      message: 'Lấy thống kê theo tháng thành công',
+      data: result
+    }).send(res)
+  }
+
+  async getAnalyticsYearly(req: Request, res: Response) {
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const groupId = getStringParam(req.query.groupId)
+    const result = await userAnalyticsService.getUserAnalyticsYearly(userId, groupId)
+    new OK({
+      message: 'Lấy thống kê theo năm thành công',
+      data: result
+    }).send(res)
+  }
+
+  async getAnalyticsCompare(req: Request, res: Response) {
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const groupId = getStringParam(req.query.groupId)
+    const monthStr = getStringParam(req.query.month)
+    const yearStr = getStringParam(req.query.year)
+    if (!monthStr || !yearStr) {
+      return res.status(400).json({ message: 'month và year là bắt buộc' })
+    }
+    const month = parseInt(monthStr, 10)
+    const year = parseInt(yearStr, 10)
+    const result = await userAnalyticsService.compareUserAnalytics(userId, groupId, month, year)
+    new OK({
+      message: 'So sánh chi tiêu thành công',
       data: result
     }).send(res)
   }

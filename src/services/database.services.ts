@@ -15,6 +15,7 @@ import { IBill } from '~/models/schemas/bill.schema'
 import { IFriendRequest } from '~/models/schemas/friendRequest.schema'
 import { IDebt } from '~/models/schemas/debt.schema'
 import { IShoppingList } from '~/models/schemas/shoppingList.schema'
+import { IUserAnalytics } from '~/models/schemas/userAnalytics.schema'
 
 export class DatabaseServices {
   private client: MongoClient
@@ -115,6 +116,10 @@ export class DatabaseServices {
 
   get friendRequests(): Collection<IFriendRequest> {
     return this.db.collection<IFriendRequest>(envConfig.dbFriendRequestCollection)
+  }
+
+  get userAnalytics(): Collection<IUserAnalytics> {
+    return this.db.collection<IUserAnalytics>(envConfig.dbUserAnalyticsCollection)
   }
 }
 

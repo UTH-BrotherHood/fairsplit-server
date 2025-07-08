@@ -83,4 +83,12 @@ userRoute.get('/blocked', accessTokenValidation, wrapRequestHandler(userControll
 userRoute.get('/activity', accessTokenValidation, wrapRequestHandler(userController.getUserActivity))
 userRoute.get('/statistics', accessTokenValidation, wrapRequestHandler(userController.getUserStatistics))
 
+/**
+ * User Analytics
+ */
+userRoute.get('/analytics/overview', accessTokenValidation, wrapRequestHandler(userController.getAnalyticsOverview))
+userRoute.get('/analytics/monthly', accessTokenValidation, wrapRequestHandler(userController.getAnalyticsMonthly))
+userRoute.get('/analytics/yearly', accessTokenValidation, wrapRequestHandler(userController.getAnalyticsYearly))
+userRoute.get('/analytics/compare', accessTokenValidation, wrapRequestHandler(userController.getAnalyticsCompare))
+
 export default userRoute
