@@ -83,6 +83,43 @@ class BillController {
       result
     })
   }
+
+  async getPaymentById(req: Request, res: Response) {
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const { billId, paymentId } = req.params
+    const bill = await billService.getBillById(userId, billId)
+    const payment = bill.payments.find((p) => p._id.toString() === paymentId)
+    if (!payment) {
+      return res.status(404).json({ message: BILL_MESSAGES.PAYMENT_NOT_FOUND })
+    }
+
+    new OK({
+      message: BILL_MESSAGES.GET_PAYMENT_SUCCESSFULLY,
+      data: payment
+    }).send(res)
+  }
+
+  async updatePayment(req: Request, res: Response) {
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const { billId, paymentId } = req.params
+    const updateData = req.body
+    const updatedPayment = await billService.updatePayment(userId, billId, paymentId, updateData)
+
+    new OK({
+      message: BILL_MESSAGES.PAYMENT_UPDATED_SUCCESSFULLY,
+      data: updatedPayment
+    }).send(res)
+  }
+
+  async deletePayment(req: Request, res: Response) {
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const { billId, paymentId } = req.params
+    await billService.deletePayment(userId, billId, paymentId)
+
+    new OK({
+      message: BILL_MESSAGES.PAYMENT_DELETED_SUCCESSFULLY
+    }).send(res)
+  }
 }
 
 const billController = new BillController()

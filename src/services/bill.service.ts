@@ -31,6 +31,14 @@ class BillService {
     return group
   }
 
+  private calculateBillStatus(bill: IBill, payments: IBillPayment[]) {
+    const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0)
+
+    if (totalPaid === 0) return BillStatus.Pending
+    if (totalPaid < bill.amount) return BillStatus.PartiallyPaid
+    return BillStatus.Completed
+  }
+
   private async checkBillPermission(userId: string, billId: string) {
     const bill = await databaseService.bills.findOne({
       _id: new ObjectId(billId)
@@ -320,17 +328,76 @@ class BillService {
     return result
   }
 
-  private calculateBillStatus(bill: IBill, payments: IBillPayment[]) {
-    const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0)
-
-    if (totalPaid === 0) return BillStatus.Pending
-    if (totalPaid < bill.amount) return BillStatus.PartiallyPaid
-    return BillStatus.Completed
-  }
-
   async getBillPayments(userId: string, billId: string) {
     const { bill } = await this.checkBillPermission(userId, billId)
     return bill.payments
+  }
+
+  async updatePayment(userId: string, billId: string, paymentId: string, updateData: any) {
+    const { bill, member } = await this.checkBillPermission(userId, billId)
+    const paymentIndex = bill.payments.findIndex((p) => p._id.toString() === paymentId)
+    if (paymentIndex === -1) {
+      throw new ErrorWithStatus({
+        message: BILL_MESSAGES.PAYMENT_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+    // Only creator of payment or group owner/admin can update
+    if (
+      bill.payments[paymentIndex].createdBy.toString() !== userId &&
+      ![GroupRole.Owner, GroupRole.Admin].includes(member.role)
+    ) {
+      throw new ErrorWithStatus({
+        message: BILL_MESSAGES.NOT_BILL_CREATOR,
+        status: httpStatusCode.FORBIDDEN
+      })
+    }
+    const updateFields: any = {}
+    if (updateData.amount !== undefined) updateFields['payments.$.amount'] = updateData.amount
+    if (updateData.paidBy !== undefined) updateFields['payments.$.paidBy'] = new ObjectId(updateData.paidBy)
+    if (updateData.paidTo !== undefined) updateFields['payments.$.paidTo'] = new ObjectId(updateData.paidTo)
+    if (updateData.date !== undefined) updateFields['payments.$.date'] = new Date(updateData.date)
+    if (updateData.method !== undefined) updateFields['payments.$.method'] = updateData.method
+    if (updateData.notes !== undefined) updateFields['payments.$.notes'] = updateData.notes
+    updateFields['updatedAt'] = new Date()
+    const result = await databaseService.bills.findOneAndUpdate(
+      { _id: new ObjectId(billId), 'payments._id': new ObjectId(paymentId) },
+      { $set: updateFields },
+      { returnDocument: 'after' }
+    )
+    const updatedPayment =
+      result && result.payments ? result.payments.find((p: IBillPayment) => p._id.toString() === paymentId) : null
+
+    if (!updatedPayment) {
+      throw new ErrorWithStatus({
+        message: BILL_MESSAGES.PAYMENT_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+    return updatedPayment
+  }
+
+  async deletePayment(userId: string, billId: string, paymentId: string) {
+    const { bill, member } = await this.checkBillPermission(userId, billId)
+    const payment = bill.payments.find((p) => p._id.toString() === paymentId)
+    if (!payment) {
+      throw new ErrorWithStatus({
+        message: BILL_MESSAGES.PAYMENT_NOT_FOUND,
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+    // Only creator of payment or group owner/admin can delete
+    if (payment.createdBy.toString() !== userId && ![GroupRole.Owner, GroupRole.Admin].includes(member.role)) {
+      throw new ErrorWithStatus({
+        message: BILL_MESSAGES.NOT_BILL_CREATOR,
+        status: httpStatusCode.FORBIDDEN
+      })
+    }
+    await databaseService.bills.updateOne(
+      { _id: new ObjectId(billId) },
+      { $pull: { payments: { _id: new ObjectId(paymentId) } }, $set: { updatedAt: new Date() } }
+    )
+    return true
   }
 }
 

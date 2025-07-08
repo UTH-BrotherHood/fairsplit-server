@@ -47,4 +47,24 @@ billRoute.get(
   wrapRequestHandler(billController.getBillPayments)
 )
 
+billRoute.get(
+  '/:billId/payments/:paymentId',
+  accessTokenValidation,
+  billIdValidation,
+  wrapRequestHandler(billController.getPaymentById)
+)
+
+billRoute.patch(
+  '/:billId/payments/:paymentId',
+  accessTokenValidation,
+  billIdValidation,
+  wrapRequestHandler(billController.updatePayment)
+)
+
+billRoute.delete(
+  '/:billId/payments/:paymentId',
+  accessTokenValidation,
+  billIdValidation,
+  wrapRequestHandler(billController.deletePayment)
+)
 export default billRoute
