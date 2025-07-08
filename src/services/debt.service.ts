@@ -6,6 +6,8 @@ import { DebtStatus, Settlement } from '~/models/schemas/debt.schema'
 import { IDebt } from '~/models/schemas/debt.schema'
 import { DebtBodyRequest, GetDebtsReqQuery, SettleDebtReqBody } from '~/models/requests/debt.requests'
 import databaseService from './database.services'
+import { PaymentMethod, TransactionStatus, TransactionType } from '~/models/schemas/transaction.schema'
+import userAnalyticsService from './userAnalytics.service'
 
 class DebtsService {
   private async checkGroupMembership(userId: string, groupId: string) {
@@ -170,6 +172,28 @@ class DebtsService {
       },
       { returnDocument: 'after' }
     )
+
+    const transaction = {
+      groupId: debt.groupId,
+      billId: debt.billId,
+      fromUserId: debt.from.userId,
+      toUserId: debt.to.userId,
+      amount: settlement.amount,
+      type: TransactionType.Payment,
+      status: TransactionStatus.Completed,
+      paymentMethod: settlement.method as PaymentMethod,
+      paymentProof: undefined,
+      note: settlement.notes,
+      createdAt: settlement.createdAt,
+      updatedAt: settlement.createdAt,
+      completedAt: settlement.createdAt,
+      userId: settlement.settledBy,
+      description: `Trả nợ cho bill: ${debt.billId}`,
+      metadata: {}
+    }
+    await databaseService.transactions.insertOne(transaction)
+
+    await userAnalyticsService.processTransactionAnalytics(transaction)
 
     return result
   }

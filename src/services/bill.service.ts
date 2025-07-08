@@ -13,6 +13,8 @@ import {
 import databaseService from './database.services'
 import databaseServices from './database.services'
 import { calculateParticipantSharesAndAmounts } from '~/utils/bill.utils'
+import { PaymentMethod, TransactionStatus, TransactionType } from '~/models/schemas/transaction.schema'
+import userAnalyticsService from './userAnalytics.service'
 class BillService {
   private async checkGroupMembership(userId: string, groupId: string) {
     const group = await databaseService.groups.findOne({
@@ -324,6 +326,29 @@ class BillService {
       },
       { returnDocument: 'after' }
     )
+
+    const transaction = {
+      groupId: bill.groupId,
+      billId: new ObjectId(billId),
+      fromUserId: payment.paidBy,
+      toUserId: payment.paidTo,
+      amount: payment.amount,
+      type: TransactionType.Payment,
+      status: TransactionStatus.Completed,
+      paymentMethod: payment.method as PaymentMethod,
+      paymentProof: undefined,
+      note: payment.notes,
+      createdAt: payment.createdAt,
+      updatedAt: payment.createdAt,
+      completedAt: payment.createdAt,
+      userId: new ObjectId(userId),
+      description: `Thanh toán cho bill: ${bill.title}`,
+      metadata: { category: bill.category }
+    }
+
+    await databaseService.transactions.insertOne(transaction)
+
+    await userAnalyticsService.processTransactionAnalytics(transaction)
 
     return result
   }
