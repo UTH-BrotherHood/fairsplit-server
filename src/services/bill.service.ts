@@ -15,6 +15,7 @@ import databaseServices from './database.services'
 import { calculateParticipantSharesAndAmounts } from '~/utils/bill.utils'
 import { PaymentMethod, TransactionStatus, TransactionType } from '~/models/schemas/transaction.schema'
 import userAnalyticsService from './userAnalytics.service'
+import { excludeSensitiveFieldsForAnotherUser } from '~/utils/user.utils'
 class BillService {
   private async checkGroupMembership(userId: string, groupId: string) {
     const group = await databaseService.groups.findOne({
@@ -185,8 +186,27 @@ class BillService {
       databaseService.bills.countDocuments(filter)
     ])
 
+    // Lấy tất cả userId của participants trong các bill
+    const allParticipantIds = [...new Set(bills.flatMap((bill) => bill.participants.map((p) => p.userId.toString())))]
+    const users = await databaseService.users
+      .find({ _id: { $in: allParticipantIds.map((id) => new ObjectId(id)) } })
+      .toArray()
+    const userMap = new Map(users.map((u) => [u._id.toString(), excludeSensitiveFieldsForAnotherUser(u)]))
+
+    const billsWithUser = bills.map((bill) => ({
+      ...bill,
+      participants: bill.participants.map((p) => {
+        const user = userMap.get(p.userId.toString())
+        return {
+          ...p,
+          username: user ? user.username : null,
+          avatarUrl: user ? user.avatarUrl : null
+        }
+      })
+    }))
+
     return {
-      bills,
+      bills: billsWithUser,
       pagination: {
         page,
         limit,
@@ -198,7 +218,23 @@ class BillService {
 
   async getBillById(userId: string, billId: string) {
     const { bill } = await this.checkBillPermission(userId, billId)
-    return bill
+    // Lấy tất cả userId của participants
+    const participantIds = [...new Set(bill.participants.map((p) => p.userId.toString()))]
+    const users = await databaseService.users
+      .find({ _id: { $in: participantIds.map((id) => new ObjectId(id)) } })
+      .toArray()
+    const userMap = new Map(users.map((u) => [u._id.toString(), excludeSensitiveFieldsForAnotherUser(u)]))
+    return {
+      ...bill,
+      participants: bill.participants.map((p) => {
+        const user = userMap.get(p.userId.toString())
+        return {
+          ...p,
+          username: user ? user.username : null,
+          avatarUrl: user ? user.avatarUrl : null
+        }
+      })
+    }
   }
 
   async updateBill(userId: string, billId: string, payload: UpdateBillReqBody) {
