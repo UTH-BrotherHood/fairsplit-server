@@ -11,8 +11,15 @@ import httpStatusCode from '~/core/statusCodes'
  */
 export const excludeSensitiveFields = (
   user: any
-): Omit<IUser, 'hashPassword' | 'forgotPasswordToken' | 'emailVerifyToken' | 'forgotPassword'> => {
-  const { hashPassword, forgotPasswordToken, emailVerifyToken, forgotPassword, ...userWithoutSensitiveData } = user
+): Omit<IUser, 'hashPassword' | 'forgotPasswordToken' | 'blockedUsers' | 'emailVerifyToken' | 'forgotPassword'> => {
+  const {
+    hashPassword,
+    forgotPasswordToken,
+    emailVerifyToken,
+    forgotPassword,
+    blockedUsers,
+    ...userWithoutSensitiveData
+  } = user
   return userWithoutSensitiveData
 }
 
@@ -24,7 +31,7 @@ export const excludeSensitiveFieldsForAnotherUser = (
   | 'verificationType'
   | 'friends'
   | 'friendRequests'
-  // | 'blockedUsers'
+  | 'blockedUsers'
   | 'preferences'
   | 'settings'
   | 'notifications'
@@ -51,7 +58,7 @@ export const excludeSensitiveFieldsForAnotherUser = (
     verificationType,
     friends,
     friendRequests,
-    // blockedUsers,
+    blockedUsers,
     preferences,
     settings,
     notifications,
