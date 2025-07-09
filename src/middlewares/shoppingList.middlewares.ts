@@ -24,12 +24,17 @@ export const updateShoppingListValidation = validate(
 
 export const addShoppingListItemValidation = validate(
   checkSchema({
-    name: { notEmpty: true, isString: true },
-    quantity: { notEmpty: true, isFloat: { options: { min: 1 } } },
-    unit: { optional: true, isString: true },
-    estimatedPrice: { optional: true, isFloat: { options: { min: 0 } } },
-    note: { optional: true, isString: true },
-    category: { optional: true, isString: true }
+    items: {
+      in: ['body'],
+      isArray: true,
+      errorMessage: 'items must array'
+    },
+    'items.*.name': { notEmpty: true, isString: true },
+    'items.*.quantity': { notEmpty: true, isFloat: { options: { min: 1 } } },
+    'items.*.unit': { optional: true, isString: true },
+    'items.*.estimatedPrice': { optional: true, isFloat: { options: { min: 0 } } },
+    'items.*.note': { optional: true, isString: true },
+    'items.*.category': { optional: true, isString: true }
   })
 )
 

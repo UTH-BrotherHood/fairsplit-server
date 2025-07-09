@@ -63,7 +63,8 @@ export class ShoppingListController {
   async addItem(req: Request, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
     const { listId } = req.params
-    const result = await shoppingListService.addItem(userId, listId, req.body as AddShoppingListItemReqBody)
+    const items = req.body.items
+    const result = await shoppingListService.addItems(userId, listId, items)
     new CREATED({
       message: SHOPPING_LIST_MESSAGES.ITEM_ADDED,
       data: result

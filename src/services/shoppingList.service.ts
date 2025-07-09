@@ -123,6 +123,29 @@ export class ShoppingListService {
     return newItem
   }
 
+  async addItems(userId: string, listId: string, items: any[]) {
+    const list = await databaseServices.shoppingLists.findOne({ _id: new ObjectId(listId) })
+    if (!list) throw new ErrorWithStatus({ message: 'Danh sách không tồn tại', status: 404 })
+    await this.checkGroupMembership(userId, list.groupId.toString())
+
+    const newItems = items.map((item) => ({
+      _id: new ObjectId(),
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      estimatedPrice: item.estimatedPrice,
+      note: item.note,
+      category: item.category,
+      isPurchased: false
+    }))
+
+    await databaseServices.shoppingLists.updateOne(
+      { _id: list._id },
+      { $push: { items: { $each: newItems } }, $set: { updatedAt: new Date() } }
+    )
+    return newItems
+  }
+
   async updateItem(userId: string, listId: string, itemId: string, payload: any) {
     const list = await databaseServices.shoppingLists.findOne({ _id: new ObjectId(listId) })
     if (!list) throw new ErrorWithStatus({ message: 'Danh sách không tồn tại', status: 404 })
