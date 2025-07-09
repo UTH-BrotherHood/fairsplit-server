@@ -9,13 +9,13 @@ import {
 } from '~/models/requests/bill.requests'
 import billService from '~/services/bill.service'
 import { BILL_MESSAGES } from '~/constants/messages'
-import { OK } from '~/core/succes.response'
+import { CREATED, OK } from '~/core/succes.response'
 
 class BillController {
   async createBill(req: Request<ParamsDictionary, any, CreateBillReqBody>, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
     const result = await billService.createBill(userId, req.body)
-    new OK({
+    new CREATED({
       message: BILL_MESSAGES.BILL_CREATED_SUCCESSFULLY,
       data: result
     }).send(res)
@@ -28,60 +28,60 @@ class BillController {
     const { userId } = req.decodedAuthorization as TokenPayload
     const { groupId } = req.params
     const result = await billService.getGroupBills(userId, groupId, req.query)
-    return res.json({
+    new OK({
       message: BILL_MESSAGES.GET_BILLS_SUCCESSFULLY,
-      result
-    })
+      data: result
+    }).send(res)
   }
 
   async getBillById(req: Request, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
     const { billId } = req.params
     const result = await billService.getBillById(userId, billId)
-    return res.json({
+    new OK({
       message: BILL_MESSAGES.GET_BILL_SUCCESSFULLY,
-      result
-    })
+      data: result
+    }).send(res)
   }
 
   async updateBill(req: Request<ParamsDictionary & { billId: string }, any, UpdateBillReqBody>, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
     const { billId } = req.params
     const result = await billService.updateBill(userId, billId, req.body)
-    return res.json({
+    new OK({
       message: BILL_MESSAGES.BILL_UPDATED_SUCCESSFULLY,
-      result
-    })
+      data: result
+    }).send(res)
   }
 
   async deleteBill(req: Request, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
     const { billId } = req.params
     const result = await billService.deleteBill(userId, billId)
-    return res.json({
+    new OK({
       message: BILL_MESSAGES.BILL_DELETED_SUCCESSFULLY,
-      result
-    })
+      data: result
+    }).send(res)
   }
 
   async addPayment(req: Request<ParamsDictionary & { billId: string }, any, AddPaymentReqBody>, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
     const { billId } = req.params
     const result = await billService.addPayment(userId, billId, req.body)
-    return res.json({
+    new CREATED({
       message: BILL_MESSAGES.PAYMENT_ADDED_SUCCESSFULLY,
-      result
-    })
+      data: result
+    }).send(res)
   }
 
   async getBillPayments(req: Request, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
     const { billId } = req.params
     const result = await billService.getBillPayments(userId, billId)
-    return res.json({
+    new OK({
       message: BILL_MESSAGES.GET_PAYMENTS_SUCCESSFULLY,
-      result
-    })
+      data: result
+    }).send(res)
   }
 
   async getPaymentById(req: Request, res: Response) {
