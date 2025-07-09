@@ -5,7 +5,7 @@ import {
   changePasswordValidation,
   userPreferencesValidation,
   updatePrivacySettingsValidation,
-  blockUserValidation,
+  // blockUserValidation,
   updateProfileValidation
 } from '~/middlewares/user.middlewares'
 import { wrapRequestHandler } from '~/utils/wrapHandler'
