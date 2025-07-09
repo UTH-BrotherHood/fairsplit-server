@@ -24,7 +24,7 @@ export const excludeSensitiveFieldsForAnotherUser = (
   | 'verificationType'
   | 'friends'
   | 'friendRequests'
-  | 'blockedUsers'
+  // | 'blockedUsers'
   | 'preferences'
   | 'settings'
   | 'notifications'
@@ -51,7 +51,7 @@ export const excludeSensitiveFieldsForAnotherUser = (
     verificationType,
     friends,
     friendRequests,
-    blockedUsers,
+    // blockedUsers,
     preferences,
     settings,
     notifications,

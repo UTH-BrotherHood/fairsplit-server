@@ -93,7 +93,7 @@ class UsersService {
       forgotPasswordToken: 0,
       emailVerifyToken: 0,
       forgotPassword: 0,
-      blockedUsers: 0,
+      // blockedUsers: 0,
       friends: 0,
       groups: 0,
       preferences: 0,
@@ -139,137 +139,137 @@ class UsersService {
     return true
   }
 
-  async blockUser(userId: string, targetUserId: ObjectId, reason?: string) {
-    if (userId === targetUserId.toString()) {
-      throw new ErrorWithStatus({
-        message: USER_MESSAGES.CANNOT_BLOCK_YOURSELF,
-        status: httpStatusCode.BAD_REQUEST
-      })
-    }
+  // async blockUser(userId: string, targetUserId: ObjectId, reason?: string) {
+  //   if (userId === targetUserId.toString()) {
+  //     throw new ErrorWithStatus({
+  //       message: USER_MESSAGES.CANNOT_BLOCK_YOURSELF,
+  //       status: httpStatusCode.BAD_REQUEST
+  //     })
+  //   }
 
-    const user = await getUserById(userId)
-    if (!user) {
-      throw new ErrorWithStatus({
-        message: USER_MESSAGES.USER_NOT_FOUND,
-        status: httpStatusCode.NOT_FOUND
-      })
-    }
+  //   const user = await getUserById(userId)
+  //   if (!user) {
+  //     throw new ErrorWithStatus({
+  //       message: USER_MESSAGES.USER_NOT_FOUND,
+  //       status: httpStatusCode.NOT_FOUND
+  //     })
+  //   }
 
-    const targetUser = await getUserById(targetUserId)
-    if (!targetUser) {
-      throw new ErrorWithStatus({
-        message: USER_MESSAGES.USER_NOT_FOUND,
-        status: httpStatusCode.NOT_FOUND
-      })
-    }
+  //   const targetUser = await getUserById(targetUserId)
+  //   if (!targetUser) {
+  //     throw new ErrorWithStatus({
+  //       message: USER_MESSAGES.USER_NOT_FOUND,
+  //       status: httpStatusCode.NOT_FOUND
+  //     })
+  //   }
 
-    const isAlreadyBlocked = user.blockedUsers?.some(
-      (blockedUser) => blockedUser.userId.toString() === targetUserId.toString()
-    )
+  //   const isAlreadyBlocked = user.blockedUsers?.some(
+  //     (blockedUser) => blockedUser.userId.toString() === targetUserId.toString()
+  //   )
 
-    if (isAlreadyBlocked) {
-      throw new ErrorWithStatus({
-        message: USER_MESSAGES.USER_ALREADY_BLOCKED,
-        status: httpStatusCode.BAD_REQUEST
-      })
-    }
+  //   if (isAlreadyBlocked) {
+  //     throw new ErrorWithStatus({
+  //       message: USER_MESSAGES.USER_ALREADY_BLOCKED,
+  //       status: httpStatusCode.BAD_REQUEST
+  //     })
+  //   }
 
-    await updateUserAndCache(userId, {
-      blockedUsers: [
-        ...(user.blockedUsers || []),
-        {
-          userId: targetUserId,
-          reason,
-          createdAt: new Date()
-        }
-      ]
-    })
+  //   await updateUserAndCache(userId, {
+  //     blockedUsers: [
+  //       ...(user.blockedUsers || []),
+  //       {
+  //         userId: targetUserId,
+  //         reason,
+  //         createdAt: new Date()
+  //       }
+  //     ]
+  //   })
 
-    // Remove any existing friend connections or requests
-    await Promise.all([
-      updateUserAndCache(userId, {
-        friends: user.friends?.filter((friendId) => friendId.toString() !== targetUserId.toString())
-      }),
-      updateUserAndCache(targetUserId, {
-        friends: targetUser.friends?.filter((friendId) => friendId.toString() !== userId.toString())
-      }),
-      this.friendRequests.deleteMany({
-        $or: [
-          {
-            fromUserId: new ObjectId(userId),
-            toUserId: targetUserId
-          },
-          {
-            fromUserId: targetUserId,
-            toUserId: new ObjectId(userId)
-          }
-        ]
-      })
-    ])
+  //   // Remove any existing friend connections or requests
+  //   await Promise.all([
+  //     updateUserAndCache(userId, {
+  //       friends: user.friends?.filter((friendId) => friendId.toString() !== targetUserId.toString())
+  //     }),
+  //     updateUserAndCache(targetUserId, {
+  //       friends: targetUser.friends?.filter((friendId) => friendId.toString() !== userId.toString())
+  //     }),
+  //     this.friendRequests.deleteMany({
+  //       $or: [
+  //         {
+  //           fromUserId: new ObjectId(userId),
+  //           toUserId: targetUserId
+  //         },
+  //         {
+  //           fromUserId: targetUserId,
+  //           toUserId: new ObjectId(userId)
+  //         }
+  //       ]
+  //     })
+  //   ])
 
-    return true
-  }
+  //   return true
+  // }
 
-  async unblockUser(userId: string, targetUserId: ObjectId) {
-    if (userId === targetUserId.toString()) {
-      throw new ErrorWithStatus({
-        message: USER_MESSAGES.CANNOT_UNBLOCK_YOURSELF,
-        status: httpStatusCode.BAD_REQUEST
-      })
-    }
+  // async unblockUser(userId: string, targetUserId: ObjectId) {
+  //   if (userId === targetUserId.toString()) {
+  //     throw new ErrorWithStatus({
+  //       message: USER_MESSAGES.CANNOT_UNBLOCK_YOURSELF,
+  //       status: httpStatusCode.BAD_REQUEST
+  //     })
+  //   }
 
-    const user = await getUserById(userId)
-    if (!user) {
-      throw new ErrorWithStatus({
-        message: USER_MESSAGES.USER_NOT_FOUND,
-        status: httpStatusCode.NOT_FOUND
-      })
-    }
+  //   const user = await getUserById(userId)
+  //   if (!user) {
+  //     throw new ErrorWithStatus({
+  //       message: USER_MESSAGES.USER_NOT_FOUND,
+  //       status: httpStatusCode.NOT_FOUND
+  //     })
+  //   }
 
-    const isBlocked = user.blockedUsers?.some(
-      (blockedUser) => blockedUser.userId.toString() === targetUserId.toString()
-    )
+  //   const isBlocked = user.blockedUsers?.some(
+  //     (blockedUser) => blockedUser.userId.toString() === targetUserId.toString()
+  //   )
 
-    if (!isBlocked) {
-      throw new ErrorWithStatus({
-        message: USER_MESSAGES.USER_NOT_BLOCKED,
-        status: httpStatusCode.BAD_REQUEST
-      })
-    }
+  //   if (!isBlocked) {
+  //     throw new ErrorWithStatus({
+  //       message: USER_MESSAGES.USER_NOT_BLOCKED,
+  //       status: httpStatusCode.BAD_REQUEST
+  //     })
+  //   }
 
-    await updateUserAndCache(userId, {
-      blockedUsers: user.blockedUsers?.filter(
-        (blockedUser) => blockedUser.userId.toString() !== targetUserId.toString()
-      )
-    })
+  //   await updateUserAndCache(userId, {
+  //     blockedUsers: user.blockedUsers?.filter(
+  //       (blockedUser) => blockedUser.userId.toString() !== targetUserId.toString()
+  //     )
+  //   })
 
-    return true
-  }
+  //   return true
+  // }
 
-  async getBlockedUsers(userId: string) {
-    const user = await getUserById(userId)
-    if (!user) {
-      throw new ErrorWithStatus({
-        message: USER_MESSAGES.USER_NOT_FOUND,
-        status: httpStatusCode.NOT_FOUND
-      })
-    }
+  // async getBlockedUsers(userId: string) {
+  //   const user = await getUserById(userId)
+  //   if (!user) {
+  //     throw new ErrorWithStatus({
+  //       message: USER_MESSAGES.USER_NOT_FOUND,
+  //       status: httpStatusCode.NOT_FOUND
+  //     })
+  //   }
 
-    const blockedUsers = await Promise.all(
-      (user.blockedUsers || []).map(async (blockedUser) => {
-        const user = await getUserById(blockedUser.userId)
-        if (!user) return null
+  //   const blockedUsers = await Promise.all(
+  //     (user.blockedUsers || []).map(async (blockedUser) => {
+  //       const user = await getUserById(blockedUser.userId)
+  //       if (!user) return null
 
-        return {
-          ...excludeSensitiveFields(user),
-          blockedAt: blockedUser.createdAt,
-          reason: blockedUser.reason
-        }
-      })
-    )
+  //       return {
+  //         ...excludeSensitiveFields(user),
+  //         blockedAt: blockedUser.createdAt,
+  //         reason: blockedUser.reason
+  //       }
+  //     })
+  //   )
 
-    return blockedUsers.filter(Boolean)
-  }
+  //   return blockedUsers.filter(Boolean)
+  // }
 
   async sendFriendRequest(userId: string, targetUserId: ObjectId) {
     if (userId === targetUserId.toString()) {
@@ -296,21 +296,21 @@ class UsersService {
       })
     }
 
-    // Check if the target user has blocked the sender
-    if (targetUser.blockedUsers?.some((blockedUser) => blockedUser.userId.toString() === userId)) {
-      throw new ErrorWithStatus({
-        message: USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_USER_WHO_BLOCKED_YOU,
-        status: httpStatusCode.BAD_REQUEST
-      })
-    }
+    // // Check if the target user has blocked the sender
+    // if (targetUser.blockedUsers?.some((blockedUser) => blockedUser.userId.toString() === userId)) {
+    //   throw new ErrorWithStatus({
+    //     message: USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_USER_WHO_BLOCKED_YOU,
+    //     status: httpStatusCode.BAD_REQUEST
+    //   })
+    // }
 
-    // Check if the sender has blocked the target user
-    if (user.blockedUsers?.some((blockedUser) => blockedUser.userId.toString() === targetUserId.toString())) {
-      throw new ErrorWithStatus({
-        message: USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_BLOCKED_USER,
-        status: httpStatusCode.BAD_REQUEST
-      })
-    }
+    // // Check if the sender has blocked the target user
+    // if (user.blockedUsers?.some((blockedUser) => blockedUser.userId.toString() === targetUserId.toString())) {
+    //   throw new ErrorWithStatus({
+    //     message: USER_MESSAGES.CANNOT_SEND_FRIEND_REQUEST_TO_BLOCKED_USER,
+    //     status: httpStatusCode.BAD_REQUEST
+    //   })
+    // }
 
     // Check if there's already a pending request
     const existingRequest = await this.friendRequests.findOne({
@@ -513,7 +513,7 @@ class UsersService {
     return {
       totalFriends: user.friends?.length || 0,
       totalGroups: user.groups?.length || 0,
-      totalBlockedUsers: user.blockedUsers?.length || 0,
+      // totalBlockedUsers: user.blockedUsers?.length || 0,
       totalPendingFriendRequests: friendRequestsCount,
       lastActive: user.updatedAt,
       accountAge: new Date().getTime() - user.createdAt.getTime()
@@ -532,7 +532,7 @@ class UsersService {
     return {
       totalFriends: user.friends?.length || 0,
       totalGroups: user.groups?.length || 0,
-      totalBlockedUsers: user.blockedUsers?.length || 0,
+      // totalBlockedUsers: user.blockedUsers?.length || 0,
       accountAge: new Date().getTime() - user.createdAt.getTime(),
       lastActive: user.updatedAt
     }
@@ -553,8 +553,8 @@ class UsersService {
       .find({
         $and: [
           { _id: { $ne: new ObjectId(userId) } },
-          { _id: { $nin: user.friends || [] } },
-          { _id: { $nin: (user.blockedUsers || []).map((b) => b.userId) } }
+          { _id: { $nin: user.friends || [] } }
+          // { _id: { $nin: (user.blockedUsers || []).map((b) => b.userId) } }
         ]
       })
       .limit(10)

@@ -23,11 +23,11 @@ export interface IUser {
   verify: UserVerificationStatus
   verificationType: UserVerificationType
   friends?: ObjectId[]
-  blockedUsers?: Array<{
-    userId: ObjectId
-    reason?: string
-    createdAt: Date
-  }>
+  // blockedUsers?: Array<{
+  //   userId: ObjectId
+  //   reason?: string
+  //   createdAt: Date
+  // }>
   preferences?: {
     language?: string
     theme?: string
@@ -68,11 +68,11 @@ export class User implements IUser {
   verify: UserVerificationStatus
   verificationType: UserVerificationType
   friends?: ObjectId[]
-  blockedUsers?: Array<{
-    userId: ObjectId
-    reason?: string
-    createdAt: Date
-  }>
+  // blockedUsers?: Array<{
+  //   userId: ObjectId
+  //   reason?: string
+  //   createdAt: Date
+  // }>
   preferences?: {
     language?: string
     theme?: string
@@ -111,7 +111,7 @@ export class User implements IUser {
     verify = UserVerificationStatus.Unverified,
     verificationType,
     friends = [],
-    blockedUsers = [],
+    // blockedUsers = [],
     preferences = {},
     privacySettings = {
       profileVisibility: 'public',
@@ -133,11 +133,11 @@ export class User implements IUser {
     verify?: UserVerificationStatus
     verificationType: UserVerificationType
     friends?: ObjectId[]
-    blockedUsers?: Array<{
-      userId: ObjectId
-      reason?: string
-      createdAt: Date
-    }>
+    // blockedUsers?: Array<{
+    //   userId: ObjectId
+    //   reason?: string
+    //   createdAt: Date
+    // }>
     preferences?: {
       language?: string
       theme?: string
@@ -175,7 +175,7 @@ export class User implements IUser {
     this.verify = verify
     this.verificationType = verificationType
     this.friends = friends
-    this.blockedUsers = blockedUsers
+    // this.blockedUsers = blockedUsers
     this.preferences = preferences
     this.privacySettings = privacySettings
     this.google = google

@@ -73,9 +73,9 @@ userRoute.delete('/friends/:requestId', accessTokenValidation, wrapRequestHandle
 /**
  * User Blocking
  */
-userRoute.post('/block', accessTokenValidation, blockUserValidation, wrapRequestHandler(userController.blockUser))
-userRoute.delete('/block/:userId', accessTokenValidation, wrapRequestHandler(userController.unblockUser))
-userRoute.get('/blocked', accessTokenValidation, wrapRequestHandler(userController.getBlockedUsers))
+// userRoute.post('/block', accessTokenValidation, blockUserValidation, wrapRequestHandler(userController.blockUser))
+// userRoute.delete('/block/:userId', accessTokenValidation, wrapRequestHandler(userController.unblockUser))
+// userRoute.get('/blocked', accessTokenValidation, wrapRequestHandler(userController.getBlockedUsers))
 
 /**
  * Activity and Statistics

@@ -113,34 +113,34 @@ class UserController {
     }).send(res)
   }
 
-  async blockUser(req: Request<ParamsDictionary, any, BlockUserReqBody>, res: Response) {
-    const { userId } = req.decodedAuthorization as TokenPayload
-    const targetUserId = new ObjectId(req.params.userId)
-    const result = await userService.blockUser(userId, targetUserId, req.body.reason)
-    new OK({
-      message: USER_MESSAGES.USER_BLOCKED_SUCCESSFULLY,
-      data: result
-    }).send(res)
-  }
+  // async blockUser(req: Request<ParamsDictionary, any, BlockUserReqBody>, res: Response) {
+  //   const { userId } = req.decodedAuthorization as TokenPayload
+  //   const targetUserId = new ObjectId(req.params.userId)
+  //   const result = await userService.blockUser(userId, targetUserId, req.body.reason)
+  //   new OK({
+  //     message: USER_MESSAGES.USER_BLOCKED_SUCCESSFULLY,
+  //     data: result
+  //   }).send(res)
+  // }
 
-  async unblockUser(req: Request, res: Response) {
-    const { userId } = req.decodedAuthorization as TokenPayload
-    const targetUserId = new ObjectId(req.params.userId)
-    const result = await userService.unblockUser(userId, targetUserId)
-    new OK({
-      message: USER_MESSAGES.USER_UNBLOCKED_SUCCESSFULLY,
-      data: result
-    }).send(res)
-  }
+  // async unblockUser(req: Request, res: Response) {
+  //   const { userId } = req.decodedAuthorization as TokenPayload
+  //   const targetUserId = new ObjectId(req.params.userId)
+  //   const result = await userService.unblockUser(userId, targetUserId)
+  //   new OK({
+  //     message: USER_MESSAGES.USER_UNBLOCKED_SUCCESSFULLY,
+  //     data: result
+  //   }).send(res)
+  // }
 
-  async getBlockedUsers(req: Request, res: Response) {
-    const { userId } = req.decodedAuthorization as TokenPayload
-    const result = await userService.getBlockedUsers(userId)
-    new OK({
-      message: USER_MESSAGES.GET_BLOCKED_USERS_SUCCESSFULLY,
-      data: result
-    }).send(res)
-  }
+  // async getBlockedUsers(req: Request, res: Response) {
+  //   const { userId } = req.decodedAuthorization as TokenPayload
+  //   const result = await userService.getBlockedUsers(userId)
+  //   new OK({
+  //     message: USER_MESSAGES.GET_BLOCKED_USERS_SUCCESSFULLY,
+  //     data: result
+  //   }).send(res)
+  // }
 
   async sendFriendRequest(req: Request, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
