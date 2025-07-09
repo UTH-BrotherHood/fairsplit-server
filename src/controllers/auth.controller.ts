@@ -77,7 +77,8 @@ class AuthController {
 
   async logout(req: Request, res: Response) {
     const { refreshToken } = req.body
-    const result = await authService.logout(refreshToken)
+    const { userId } = req.decodedAuthorization as TokenPayload
+    const result = await authService.logout({ userId, refreshToken })
     return new OK({
       message: USER_MESSAGES.LOGOUT_SUCCESSFULLY,
       data: result

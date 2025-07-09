@@ -391,54 +391,56 @@ export const accessTokenValidation = validate(
 )
 
 export const refreshTokenValidation = validate(
-  checkSchema({
-    refreshToken: {
-      trim: true,
-      custom: {
-        options: async (value: string, { req }) => {
-          if (!value) {
-            throw new ErrorWithStatus({
-              message: USER_MESSAGES.REFRESH_TOKEN_IS_REQUIRED,
-              status: httpStatusCode.UNAUTHORIZED
-            })
+  checkSchema(
+    {
+      refreshToken: {
+        trim: true,
+        custom: {
+          options: async (value: string, { req }) => {
+            if (!value) {
+              throw new ErrorWithStatus({
+                message: USER_MESSAGES.REFRESH_TOKEN_IS_REQUIRED,
+                status: httpStatusCode.UNAUTHORIZED
+              })
+            }
+
+            try {
+              const redis = await redisClient
+              const blacklistKey = `blacklist:token:${value}`
+              const isBlacklisted = await redis.exists(blacklistKey)
+              if (isBlacklisted) {
+                throw new ErrorWithStatus({
+                  message: USER_MESSAGES.USED_REFRESH_TOKEN_OR_NOT_EXIST,
+                  status: httpStatusCode.UNAUTHORIZED
+                })
+              }
+
+              const [decodedRefreshToken, refreshToken] = await Promise.all([
+                verifyToken({ token: value, secretOrPublickey: envConfig.jwtSecretRefreshToken }),
+                databaseServices.tokens.findOne({ token: value, type: TokenType.RefreshToken })
+              ])
+
+              if (!refreshToken) {
+                throw new ErrorWithStatus({
+                  message: USER_MESSAGES.USED_REFRESH_TOKEN_OR_NOT_EXIST,
+                  status: httpStatusCode.UNAUTHORIZED
+                })
+              }
+              req.decodedRefreshToken = decodedRefreshToken as TokenPayload
+            } catch (error) {
+              if (error instanceof JsonWebTokenError) {
+                throw new ErrorWithStatus({
+                  message: error.message,
+                  status: httpStatusCode.UNAUTHORIZED
+                })
+              }
+              throw error
+            }
+            return true
           }
-
-          try {
-            // Check if token is blacklisted
-            const redis = await redisClient
-            const blacklistKey = `blacklist:token:${value}`
-            const isBlacklisted = await redis.exists(blacklistKey)
-            if (isBlacklisted) {
-              throw new ErrorWithStatus({
-                message: USER_MESSAGES.USED_REFRESH_TOKEN_OR_NOT_EXIST,
-                status: httpStatusCode.UNAUTHORIZED
-              })
-            }
-
-            const [decodedRefreshToken, refreshToken] = await Promise.all([
-              verifyToken({ token: value, secretOrPublickey: envConfig.jwtSecretRefreshToken }),
-              databaseServices.tokens.findOne({ token: value, type: TokenType.RefreshToken })
-            ])
-
-            if (!refreshToken) {
-              throw new ErrorWithStatus({
-                message: USER_MESSAGES.USED_REFRESH_TOKEN_OR_NOT_EXIST,
-                status: httpStatusCode.UNAUTHORIZED
-              })
-            }
-            req.decodedRefreshToken = decodedRefreshToken as TokenPayload
-          } catch (error) {
-            if (error instanceof JsonWebTokenError) {
-              throw new ErrorWithStatus({
-                message: error.message,
-                status: httpStatusCode.UNAUTHORIZED
-              })
-            }
-            throw error
-          }
-          return true
         }
       }
-    }
-  })
+    },
+    ['body']
+  )
 )
