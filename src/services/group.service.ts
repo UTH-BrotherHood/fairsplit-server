@@ -13,6 +13,7 @@ import databaseService from './database.services'
 import { excludeSensitiveFieldsForAnotherUser } from '~/utils/user.utils'
 import { PaginationUtils } from '~/utils/pagination.utils'
 import { PaginationQuery } from '~/models/interfaces/pagination.interface'
+import envConfig from '~/config/env'
 
 class GroupService {
   async createGroup(userId: string, payload: CreateGroupReqBody) {
@@ -61,37 +62,78 @@ class GroupService {
   async getMyGroups(userId: string, query: PaginationQuery & { search?: string }) {
     const { page, limit } = PaginationUtils.normalizeQueryParams(query)
 
-    const mongoQuery: any = {
+    const matchStage: any = {
       'members.userId': new ObjectId(userId),
       isArchived: false
     }
-
     if (query.search) {
-      mongoQuery.name = { $regex: query.search, $options: 'i' }
+      matchStage.name = { $regex: query.search, $options: 'i' }
     }
 
-    const { items: groups, pagination } = await PaginationUtils.paginate(
-      databaseService.groups,
-      mongoQuery,
-      { sort: { updatedAt: -1 } },
-      { page, limit }
-    )
+    const pipeline: any[] = [
+      { $match: matchStage },
+      { $sort: { updatedAt: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: envConfig.dbBillCollection,
+          localField: '_id',
+          foreignField: 'groupId',
+          as: 'bills'
+        }
+      },
+      {
+        $lookup: {
+          from: envConfig.dbBillCollection,
+          let: { groupId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $and: [{ $eq: ['$groupId', '$$groupId'] }, { $eq: ['$status', 'pending'] }] } } }
+          ],
+          as: 'pendingBills'
+        }
+      },
+      {
+        $addFields: {
+          pendingBillCount: { $size: '$pendingBills' }
+        }
+      },
+      {
+        $lookup: {
+          from: envConfig.dbShoppingListCollection,
+          localField: '_id',
+          foreignField: 'groupId',
+          as: 'shoppingLists'
+        }
+      },
+      {
+        $project: {
+          pendingBills: 0 // ẩn mảng pendingBills, chỉ giữ lại count
+        }
+      }
+    ]
 
-    const uniqueUserIds = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId.toString())))]
+    const groups = await databaseService.groups.aggregate(pipeline).toArray()
 
+    // Lấy tất cả userId trong các group
+    const uniqueUserIds = [...new Set(groups.flatMap((g: any) => g.members.map((m: any) => m.userId.toString())))]
     const users = await databaseService.users
       .find({ _id: { $in: uniqueUserIds.map((id) => new ObjectId(id)) } })
       .toArray()
-
     const userMap = new Map(users.map((u) => [u._id.toString(), excludeSensitiveFieldsForAnotherUser(u)]))
 
-    const result = groups.map((group) => ({
+    const result = groups.map((group: any) => ({
       ...group,
-      members: group.members.map((m) => ({
+      members: group.members.map((m: any) => ({
         ...m,
         user: userMap.get(m.userId.toString()) || null
       }))
+      // pendingBillCount đã có sẵn từ pipeline
     }))
+
+    // Đếm tổng số group để trả về pagination
+    const totalItems = await databaseService.groups.countDocuments(matchStage)
+    const pagination = PaginationUtils.getPaginationInfo(page, limit, totalItems)
 
     return {
       items: result,
