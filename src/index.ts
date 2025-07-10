@@ -11,7 +11,6 @@ import rootRouterV1 from './routes/v1'
 import { logger } from './loggers/my-logger.log'
 import { envConfig } from '~/config/env'
 import passport from 'passport'
-import { passportConfig } from './config/passport'
 
 // Khởi tạo ứng dụng Express
 const app: Application = express()
@@ -38,7 +37,6 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 app.use(passport.initialize())
-passportConfig(passport)
 
 // Kết nối database
 databaseServices.connect()
