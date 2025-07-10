@@ -19,7 +19,7 @@ export interface IUser {
   hashPassword?: string
   groups?: ObjectId[]
   avatarUrl?: string
-  dateOfBirth: Date
+  dateOfBirth?: Date
   verify: UserVerificationStatus
   verificationType: UserVerificationType
   friends?: ObjectId[]
@@ -63,7 +63,7 @@ export class User implements IUser {
   phone?: string
   hashPassword?: string
   groups?: ObjectId[]
-  dateOfBirth: Date
+  dateOfBirth?: Date
   avatarUrl?: string
   verify: UserVerificationStatus
   verificationType: UserVerificationType
@@ -128,7 +128,7 @@ export class User implements IUser {
     phone?: string
     hashPassword?: string
     groups: ObjectId[]
-    dateOfBirth: Date
+    dateOfBirth?: Date
     avatarUrl?: string
     verify?: UserVerificationStatus
     verificationType: UserVerificationType
