@@ -52,12 +52,6 @@ authRoute.post('/forgot-password', forgotPasswordValidation, wrapRequestHandler(
 
 authRoute.post('/reset-password', resetPasswordValidation, wrapRequestHandler(authController.resetPassword))
 
-authRoute.get('/login/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }))
-
-authRoute.get(
-  '/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: '/login' }),
-  wrapRequestHandler(authController.googleLogin)
-)
+authRoute.post('/login/google', wrapRequestHandler(authController.googleLogin))
 
 export default authRoute

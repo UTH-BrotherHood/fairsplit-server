@@ -6,7 +6,6 @@ import { OK } from '~/core/succes.response'
 import authService from '~/services/auth.service'
 import { httpStatusCode } from '~/core/httpStatusCode'
 import { ErrorWithStatus } from '~/utils/error.utils'
-import envConfig from '~/config/env'
 
 class AuthController {
   async register(req: Request<ParamsDictionary, unknown, RegisterReqBody>, res: Response) {
@@ -34,45 +33,21 @@ class AuthController {
   }
 
   googleLogin = async (req: Request, res: Response) => {
-    const queryString = (await import('querystring')).default
+    const { idToken } = req.body
 
-    if (!req.user) {
+    if (!idToken) {
       throw new ErrorWithStatus({
-        status: httpStatusCode.UNAUTHORIZED,
-        message: USER_MESSAGES.USER_NOT_FOUND
+        message: 'Missing idToken',
+        status: httpStatusCode.UNAUTHORIZED
       })
     }
 
-    const { accessToken, refreshToken, user: userResponse } = await authService.googleLogin(req.user)
+    const result = await authService.googleLogin(idToken)
 
-    const redirectUrl = envConfig.googleRedirectClientUrl
-    if (!redirectUrl) {
-      throw new ErrorWithStatus({
-        status: httpStatusCode.INTERNAL_SERVER_ERROR,
-        message: 'Redirect URL is not configured'
-      })
-    }
-
-    if (req.headers['x-client-type'] === 'mobile') {
-      new OK({
-        message: 'Login with Google successfully',
-        data: {
-          accessToken,
-          refreshToken,
-          user: userResponse
-        }
-      }).send(res)
-      return
-    }
-
-    const qs = queryString.stringify({
-      accessToken,
-      refreshToken,
-      user: encodeURIComponent(JSON.stringify(userResponse)),
-      status: httpStatusCode.OK
-    })
-
-    res.redirect(`${redirectUrl}?${qs}`)
+    new OK({
+      message: USER_MESSAGES.LOGIN_SUCCESSFULLY,
+      data: result
+    }).send(res)
   }
 
   async logout(req: Request, res: Response) {

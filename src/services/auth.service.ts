@@ -1,7 +1,7 @@
 'use strict'
 
 import { ObjectId } from 'mongodb'
-import { IUser, User, UserVerificationStatus, UserVerificationType } from '~/models/schemas/user.schema'
+import { User, UserVerificationStatus, UserVerificationType } from '~/models/schemas/user.schema'
 import { envConfig } from '~/config/env'
 import { signToken, verifyToken } from '~/utils/token.utils'
 import { ErrorWithStatus } from '~/utils/error.utils'
@@ -18,6 +18,7 @@ import { comparePassword, hashPassword } from '~/utils/crypto'
 import { generateVerificationCode } from '~/utils/verification'
 import { VerificationCode, VerificationCodeType } from '~/models/schemas/verificationCode.schema'
 import smsService from './sms'
+import { OAuth2Client } from 'google-auth-library'
 
 const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = 3600 // 1 hour in seconds
 const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = 604800 // 7 days in seconds
@@ -216,7 +217,6 @@ class AuthService {
 
     const userResponse = excludeSensitiveFields(user)
 
-    // Store updated user in Redis cache
     const redis = await redisClient
     await redis.setObject(`user:${user._id.toString()}`, userResponse, 1800)
 
@@ -227,39 +227,57 @@ class AuthService {
     }
   }
 
-  async googleLogin(user: IUser) {
-    if (!user) {
+  async googleLogin(idToken: string) {
+    const client = new OAuth2Client(envConfig.googleClientId)
+
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: envConfig.googleClientId
+    })
+    const payload = ticket.getPayload()
+    if (!payload || !payload.email) {
       throw new ErrorWithStatus({
         status: httpStatusCode.UNAUTHORIZED,
-        message: USER_MESSAGES.USER_NOT_FOUND
+        message: 'Google authentication failed'
       })
     }
+    const email = payload.email
+    const name = payload.name || email.split('@')[0]
+    const avatarUrl = payload.picture
 
-    // Đảm bảo người dùng luôn được verify khi đăng nhập bằng Google
-    await databaseServices.users.updateOne(
-      { _id: new ObjectId(user._id?.toString() || '') },
-      {
-        $set: {
-          verify: UserVerificationStatus.Verified,
-          lastLoginTime: new Date(),
-          status: 'online',
-          updatedAt: new Date()
-        }
-      }
-    )
+    let user = await databaseServices.users.findOne({ email })
 
-    logger.info(`Google login attempt for user: ${user.email}`, 'AuthService.googleLogin', '', {
-      userId: user._id?.toString(),
-      email: user.email
-    })
-
-    // Lấy thông tin user đã cập nhật từ database
-    const updatedUser = await databaseServices.users.findOne({ _id: new ObjectId(user._id) })
-
-    if (!updatedUser) {
-      logger.error('Updated user not found after Google login', 'AuthService.googleLogin', '', {
-        userId: user._id?.toString()
+    if (!user) {
+      const newUser = new User({
+        username: name,
+        email,
+        avatarUrl,
+        verify: UserVerificationStatus.Verified,
+        verificationType: UserVerificationType.Email,
+        google: { googleId: payload.sub },
+        groups: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
       })
+      const result = await databaseServices.users.insertOne(newUser)
+
+      user = await databaseServices.users.findOne({ _id: result.insertedId })
+    } else {
+      await databaseServices.users.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            verify: UserVerificationStatus.Verified,
+            lastLoginTime: new Date(),
+            updatedAt: new Date(),
+            avatarUrl: avatarUrl || user.avatarUrl
+          }
+        }
+      )
+      user = await databaseServices.users.findOne({ _id: user._id })
+    }
+
+    if (!user) {
       throw new ErrorWithStatus({
         status: httpStatusCode.NOT_FOUND,
         message: USER_MESSAGES.USER_NOT_FOUND
@@ -267,12 +285,12 @@ class AuthService {
     }
 
     const [accessToken, refreshToken] = await this.signAccessAndRefreshToken({
-      userId: updatedUser._id.toString(),
-      verify: UserVerificationStatus.Verified // Luôn sử dụng Verified cho Google login
+      userId: user._id.toString(),
+      verify: UserVerificationStatus.Verified
     })
 
     await databaseServices.tokens.deleteMany({
-      userId: updatedUser._id,
+      userId: user._id,
       type: TokenType.RefreshToken
     })
 
@@ -280,43 +298,23 @@ class AuthService {
 
     await databaseServices.tokens.insertOne(
       new Token({
-        userId: new ObjectId(updatedUser._id.toString()),
+        userId: new ObjectId(user._id.toString()),
         token: refreshToken,
         type: TokenType.RefreshToken,
         expiresAt: new Date((exp as number) * 1000)
       })
     )
 
-    // Fetch complete user data for response
-    const userResponse = await databaseServices.users.findOne(
-      { _id: new ObjectId(updatedUser._id.toString()) },
-      {
-        projection: {
-          password: 0,
-          forgotPasswordToken: 0,
-          emailVerifyToken: 0,
-          forgotPassword: 0
-        }
-      }
-    )
-
-    if (!userResponse) {
-      logger.error('User response not found after Google login', 'AuthService.googleLogin', '', {
-        userId: updatedUser._id.toString()
-      })
-      throw new ErrorWithStatus({
-        status: httpStatusCode.NOT_FOUND,
-        message: USER_MESSAGES.USER_NOT_FOUND
-      })
-    }
+    // Lấy user trả về (ẩn thông tin nhạy cảm)
+    const userResponse = excludeSensitiveFields(user)
 
     // Store updated user in Redis cache
     const redis = await redisClient
-    await redis.setObject(`user:${updatedUser._id.toString()}`, userResponse, 1800)
+    await redis.setObject(`user:${user._id.toString()}`, userResponse, 1800)
 
     logger.info('Google login successful', 'AuthService.googleLogin', '', {
-      userId: updatedUser._id.toString(),
-      email: updatedUser.email
+      userId: user._id.toString(),
+      email: user.email
     })
 
     return {
