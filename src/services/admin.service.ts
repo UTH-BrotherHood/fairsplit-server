@@ -40,6 +40,14 @@ interface BulkBillOperationResult {
   failedCount: number
 }
 
+interface BulkGroupOperationResult {
+  success: string[]
+  failed: Array<{ groupId: string; reason: string }>
+  total: number
+  successCount: number
+  failedCount: number
+}
+
 const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = 3600 // 1 hour in seconds
 const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = 604800 // 7 days in seconds
 const MAX_REFRESH_TOKEN_EXPIRES_IN = 2592000 // 30 days in seconds
@@ -1011,6 +1019,129 @@ class AdminService {
       }
     }
     return result
+  }
+
+  async getAllGroups(
+    paginationQuery: PaginationQuery & {
+      search?: string
+      ownerId?: string
+      status?: string
+      startDate?: Date
+      endDate?: Date
+      minMembers?: number
+      maxMembers?: number
+      sortBy?: string
+      sortOrder?: 'ASC' | 'DESC'
+    }
+  ) {
+    const query: Record<string, any> = {}
+    if (paginationQuery.search) {
+      query.$or = [
+        { name: { $regex: paginationQuery.search, $options: 'i' } },
+        { description: { $regex: paginationQuery.search, $options: 'i' } }
+      ]
+    }
+    if (paginationQuery.ownerId) {
+      query.ownerId = new ObjectId(paginationQuery.ownerId)
+    }
+    if (paginationQuery.status) {
+      query.status = paginationQuery.status
+    }
+    if (paginationQuery.startDate || paginationQuery.endDate) {
+      query.createdAt = {}
+      if (paginationQuery.startDate) query.createdAt.$gte = new Date(paginationQuery.startDate)
+      if (paginationQuery.endDate) query.createdAt.$lte = new Date(paginationQuery.endDate)
+    }
+    if (paginationQuery.minMembers || paginationQuery.maxMembers) {
+      query.memberCount = {}
+      if (paginationQuery.minMembers) query.memberCount.$gte = paginationQuery.minMembers
+      if (paginationQuery.maxMembers) query.memberCount.$lte = paginationQuery.maxMembers
+    }
+    let sort: Record<string, 1 | -1> = { createdAt: -1 }
+    if (paginationQuery.sortBy) {
+      const order = paginationQuery.sortOrder === 'ASC' ? 1 : -1
+      sort = { [paginationQuery.sortBy]: order }
+    }
+    return PaginationUtils.paginate(databaseServices.groups, query, { sort }, paginationQuery)
+  }
+
+  async getGroupById(groupId: string) {
+    const group = await databaseServices.groups.findOne({ _id: new ObjectId(groupId) })
+    if (!group) {
+      throw new ErrorWithStatus({
+        message: 'Group not found',
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+    return group
+  }
+
+  async bulkDeleteGroups(groupIds: string[]): Promise<BulkGroupOperationResult> {
+    if (!groupIds || groupIds.length === 0) {
+      throw new ErrorWithStatus({
+        message: 'No groups to delete',
+        status: httpStatusCode.BAD_REQUEST
+      })
+    }
+    const result: BulkGroupOperationResult = {
+      success: [],
+      failed: [],
+      total: groupIds.length,
+      successCount: 0,
+      failedCount: 0
+    }
+    for (const groupId of groupIds) {
+      try {
+        const group = await databaseServices.groups.findOne({ _id: new ObjectId(groupId) })
+        if (!group) {
+          result.failed.push({ groupId, reason: 'Group not found' })
+          result.failedCount++
+          continue
+        }
+        await databaseServices.groups.deleteOne({ _id: new ObjectId(groupId) })
+        result.success.push(groupId)
+        result.successCount++
+      } catch (error) {
+        result.failed.push({ groupId, reason: error instanceof Error ? error.message : 'Unknown error' })
+        result.failedCount++
+      }
+    }
+    return result
+  }
+
+  async deleteGroup(groupId: string) {
+    const group = await databaseServices.groups.findOne({ _id: new ObjectId(groupId) })
+    if (!group) {
+      throw new ErrorWithStatus({
+        message: 'Group not found',
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+    await databaseServices.groups.deleteOne({ _id: new ObjectId(groupId) })
+  }
+
+  async updateGroupStatus(groupId: string, status: string) {
+    const group = await databaseServices.groups.findOne({ _id: new ObjectId(groupId) })
+    if (!group) {
+      throw new ErrorWithStatus({
+        message: 'Group not found',
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+    await databaseServices.groups.updateOne({ _id: new ObjectId(groupId) }, { $set: { status, updatedAt: new Date() } })
+    return { groupId, status }
+  }
+
+  async getGroupMembers(groupId: string) {
+    const group = await databaseServices.groups.findOne({ _id: new ObjectId(groupId) })
+    if (!group) {
+      throw new ErrorWithStatus({
+        message: 'Group not found',
+        status: httpStatusCode.NOT_FOUND
+      })
+    }
+    // Giả sử group có trường members là mảng userId
+    return group.members || []
   }
 }
 

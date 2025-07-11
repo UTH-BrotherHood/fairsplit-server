@@ -400,3 +400,36 @@ export const bulkDeleteBillsValidation = validate(
     }
   })
 )
+
+export const bulkDeleteGroupsValidation = validate(
+  checkSchema({
+    groupIds: {
+      notEmpty: { errorMessage: 'Group IDs are required' },
+      isArray: { errorMessage: 'Group IDs must be an array' },
+      custom: {
+        options: (value) => {
+          if (!Array.isArray(value) || value.length === 0) throw new Error('Group IDs array cannot be empty')
+          if (value.length > 100) throw new Error('Cannot delete more than 100 groups at once')
+          return true
+        }
+      }
+    },
+    'groupIds.*': {
+      isString: { errorMessage: 'Each group ID must be a string' },
+      isMongoId: { errorMessage: 'Each group ID must be a valid MongoDB ObjectId' }
+    }
+  })
+)
+
+export const updateGroupStatusValidation = validate(
+  checkSchema({
+    status: {
+      notEmpty: { errorMessage: 'Status is required' },
+      isString: { errorMessage: 'Status must be a string' },
+      isIn: {
+        options: [['active', 'inactive', 'archived']],
+        errorMessage: 'Status must be one of: active, inactive, archived'
+      }
+    }
+  })
+)

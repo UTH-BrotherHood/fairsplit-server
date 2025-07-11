@@ -13,7 +13,9 @@ import {
   bulkUpdateUserStatusValidation,
   bulkDeleteUsersValidation,
   bulkDeleteCategoriesValidation,
-  bulkDeleteBillsValidation
+  bulkDeleteBillsValidation,
+  bulkDeleteGroupsValidation,
+  updateGroupStatusValidation
 } from '~/middlewares/admin.middlewares'
 import { wrapRequestHandler } from '~/utils/wrapHandler'
 
@@ -143,6 +145,29 @@ adminRoute.delete(
   adminAccessTokenValidation,
   bulkDeleteBillsValidation,
   wrapRequestHandler(adminController.bulkDeleteBills)
+)
+
+/* ========================GROUP MANAGEMENT ROUTES======================== */
+adminRoute.get('/groups', adminAccessTokenValidation, wrapRequestHandler(adminController.getAllGroups))
+adminRoute.get('/groups/:groupId', adminAccessTokenValidation, wrapRequestHandler(adminController.getGroupById))
+adminRoute.get(
+  '/groups/:groupId/members',
+  adminAccessTokenValidation,
+  wrapRequestHandler(adminController.getGroupMembers)
+)
+
+adminRoute.delete(
+  '/groups/bulk',
+  adminAccessTokenValidation,
+  bulkDeleteGroupsValidation,
+  wrapRequestHandler(adminController.bulkDeleteGroups)
+)
+adminRoute.delete('/groups/:groupId', adminAccessTokenValidation, wrapRequestHandler(adminController.deleteGroup))
+adminRoute.patch(
+  '/groups/:groupId/status',
+  adminAccessTokenValidation,
+  updateGroupStatusValidation,
+  wrapRequestHandler(adminController.updateGroupStatus)
 )
 
 export default adminRoute

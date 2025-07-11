@@ -14,7 +14,9 @@ import {
   BulkUpdateUserStatusReqBody,
   BulkDeleteUsersReqBody,
   BulkDeleteCategoriesReqBody,
-  BulkDeleteBillsReqBody
+  BulkDeleteBillsReqBody,
+  BulkDeleteGroupsReqBody,
+  UpdateGroupStatusReqBody
 } from '~/models/requests/admin.requests'
 import { AdminTokenPayload } from '~/models/requests/admin.requests'
 
@@ -333,6 +335,76 @@ class AdminController {
     return new OK({
       message: 'Bulk delete bills completed',
       data: result
+    }).send(res)
+  }
+
+  async getAllGroups(req: Request, res: Response) {
+    const { page, limit, search, ownerId, status, startDate, endDate, minMembers, maxMembers, sortBy, sortOrder } =
+      req.query
+    const result = await adminService.getAllGroups({
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      search: search as string,
+      ownerId: ownerId as string,
+      status: status as string,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
+      minMembers: minMembers ? Number(minMembers) : undefined,
+      maxMembers: maxMembers ? Number(maxMembers) : undefined,
+      sortBy: sortBy as string,
+      sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC'
+    })
+    return new OK({
+      message: 'Get all group successfully',
+      data: {
+        groups: result.items,
+        pagination: result.pagination
+      }
+    }).send(res)
+  }
+
+  async getGroupById(req: Request, res: Response) {
+    const { groupId } = req.params
+    const group = await adminService.getGroupById(groupId)
+    return new OK({
+      message: 'Get group by id successfully',
+      data: { group }
+    }).send(res)
+  }
+
+  async bulkDeleteGroups(req: Request<ParamsDictionary, any, BulkDeleteGroupsReqBody>, res: Response) {
+    const { groupIds } = req.body
+    const result = await adminService.bulkDeleteGroups(groupIds)
+    return new OK({
+      message: 'Bulk delete groups completed',
+      data: result
+    }).send(res)
+  }
+
+  async deleteGroup(req: Request, res: Response) {
+    const { groupId } = req.params
+    await adminService.deleteGroup(groupId)
+    return new OK({
+      message: 'Delete group successfully'
+    }).send(res)
+  }
+
+  async updateGroupStatus(req: Request<ParamsDictionary, any, UpdateGroupStatusReqBody>, res: Response) {
+    const { groupId } = req.params
+    const { status } = req.body
+    const result = await adminService.updateGroupStatus(groupId, status)
+    return new OK({
+      message: 'Update group status successfully',
+      data: result
+    }).send(res)
+  }
+
+  async getGroupMembers(req: Request, res: Response) {
+    const { groupId } = req.params
+    const members = await adminService.getGroupMembers(groupId)
+    return new OK({
+      message: 'Get group members successfully',
+      data: { members }
     }).send(res)
   }
 }

@@ -76,3 +76,11 @@ export interface BulkDeleteCategoriesReqBody {
 export interface BulkDeleteBillsReqBody {
   billIds: string[]
 }
+
+export interface BulkDeleteGroupsReqBody {
+  groupIds: string[]
+}
+
+export interface UpdateGroupStatusReqBody {
+  status: string
+}
