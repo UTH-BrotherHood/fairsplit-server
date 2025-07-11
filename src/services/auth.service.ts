@@ -167,18 +167,35 @@ class AuthService {
   }
 
   async login({ email, phone, password }: LoginReqBody) {
-    const user = await databaseServices.users.findOne({ $or: [{ email }, { phone }] })
+    // const user = await databaseServices.users.findOne({ $or: [{ email }, { phone }] })
+    const user = await databaseServices.users.findOne({ email: email })
 
     if (!user) {
+      logger.warn('Login failed: user not found', 'AuthService.login', '', { email })
       throw new ErrorWithStatus({
         message: email ? USER_MESSAGES.EMAIL_OR_PASSWORD_INCORRECT : USER_MESSAGES.PHONE_OR_PASSWORD_INCORRECT,
         status: httpStatusCode.UNAUTHORIZED
       })
     }
 
+    if (!user.hashPassword) {
+      logger.warn(
+        'Login failed: user does not have a password (maybe registered via Google)',
+        'AuthService.login',
+        '',
+        { userId: user._id, email: user.email }
+      )
+      throw new ErrorWithStatus({
+        message: 'Tài khoản này chưa thiết lập mật khẩu. Vui lòng đăng nhập bằng Google hoặc đặt lại mật khẩu.',
+        status: httpStatusCode.UNAUTHORIZED
+      })
+    }
+
     const isPasswordValid = await comparePassword(password, user.hashPassword as string)
+    logger.info('Password comparison result', 'AuthService.login', '', { userId: user._id, isPasswordValid })
 
     if (!isPasswordValid) {
+      logger.warn('Login failed: password incorrect', 'AuthService.login', '', { userId: user._id, email: user.email })
       throw new ErrorWithStatus({
         message: email ? USER_MESSAGES.EMAIL_OR_PASSWORD_INCORRECT : USER_MESSAGES.PHONE_OR_PASSWORD_INCORRECT,
         status: httpStatusCode.UNAUTHORIZED
@@ -219,6 +236,8 @@ class AuthService {
 
     const redis = await redisClient
     await redis.setObject(`user:${user._id.toString()}`, userResponse, 1800)
+
+    logger.info('Login successful', 'AuthService.login', '', { userId: user._id, email: user.email })
 
     return {
       accessToken,
