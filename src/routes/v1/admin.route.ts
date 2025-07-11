@@ -112,7 +112,6 @@ adminRoute.delete(
 adminRoute.delete('/users/:userId', adminAccessTokenValidation, wrapRequestHandler(adminController.deleteUser))
 
 /* ========================CATEGORY MANAGEMENT ROUTES======================== */
-adminRoute.get('/categories', adminAccessTokenValidation, wrapRequestHandler(adminController.getAllCategories))
 adminRoute.post(
   '/categories',
   adminAccessTokenValidation,

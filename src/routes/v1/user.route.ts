@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { uploadSingle } from '~/config/upload/multer'
+import adminController from '~/controllers/admin.controller'
 import userController from '~/controllers/user.controller'
 import { accessTokenValidation } from '~/middlewares/auth.middlewares'
 import { uploadMiddleware } from '~/middlewares/upload.middlware'
@@ -50,6 +51,8 @@ userRoute.patch(
   userPreferencesValidation,
   wrapRequestHandler(userController.updatePreferences)
 )
+
+userRoute.get('/categories', wrapRequestHandler(adminController.getAllCategories))
 
 /**
  * Privacy Settings
