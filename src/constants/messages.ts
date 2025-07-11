@@ -176,7 +176,11 @@ export const ADMIN_MESSAGES = {
 
   // Error Messages
   INTERNAL_SERVER_ERROR: 'Internal server error',
-  REFRESH_TOKEN_SUCCESSFULLY: 'Refresh token successfully'
+  REFRESH_TOKEN_SUCCESSFULLY: 'Refresh token successfully',
+  // Bulk user operations
+  NO_USERS_TO_UPDATE: 'No users to update',
+  NO_USERS_TO_DELETE: 'No users to delete',
+  INVALID_USER_IDS: 'Invalid user IDs provided'
 } as const
 
 export const BILL_MESSAGES = {

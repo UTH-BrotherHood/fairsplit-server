@@ -18,6 +18,7 @@ import { BillStatus } from '~/models/schemas/bill.schema'
 import { PaginationUtils } from '~/utils/pagination.utils'
 import { PaginationQuery } from '~/models/interfaces/pagination.interface'
 import { UserVerificationStatus } from '~/models/schemas/user.schema'
+import { BulkUserOperationResult } from '~/models/requests/admin.requests'
 
 interface AdminTokenPayload extends TokenPayload {
   adminId: string
@@ -462,6 +463,94 @@ class AdminService {
       details: { userId },
       createdAt: new Date()
     })
+  }
+
+  async bulkUpdateUserStatus(userIds: string[], verify: 'verified' | 'unverified'): Promise<BulkUserOperationResult> {
+    console.log('BODY:', userIds)
+
+    if (!userIds || userIds.length === 0) {
+      throw new ErrorWithStatus({
+        message: ADMIN_MESSAGES.NO_USERS_TO_UPDATE,
+        status: httpStatusCode.BAD_REQUEST
+      })
+    }
+    const validUserIds = userIds.filter((id) => ObjectId.isValid(id))
+    if (validUserIds.length !== userIds.length) {
+      throw new ErrorWithStatus({
+        message: ADMIN_MESSAGES.INVALID_USER_IDS,
+        status: httpStatusCode.BAD_REQUEST
+      })
+    }
+    const result: BulkUserOperationResult = {
+      success: [],
+      failed: [],
+      total: userIds.length,
+      successCount: 0,
+      failedCount: 0
+    }
+    for (const userId of userIds) {
+      try {
+        const updateRes = await databaseServices.users.updateOne(
+          { _id: new ObjectId(userId) },
+          {
+            $set: {
+              verify: verify === 'verified' ? UserVerificationStatus.Verified : UserVerificationStatus.Unverified,
+              updatedAt: new Date()
+            }
+          }
+        )
+        if (updateRes.matchedCount === 0) {
+          result.failed.push({ userId, reason: ADMIN_MESSAGES.USER_NOT_FOUND })
+          result.failedCount++
+          continue
+        }
+        result.success.push(userId)
+        result.successCount++
+      } catch (error) {
+        result.failed.push({ userId, reason: error instanceof Error ? error.message : 'Unknown error' })
+        result.failedCount++
+      }
+    }
+    return result
+  }
+
+  async bulkDeleteUsers(userIds: string[]): Promise<BulkUserOperationResult> {
+    if (!userIds || userIds.length === 0) {
+      throw new ErrorWithStatus({
+        message: ADMIN_MESSAGES.NO_USERS_TO_DELETE,
+        status: httpStatusCode.BAD_REQUEST
+      })
+    }
+    const validUserIds = userIds.filter((id) => ObjectId.isValid(id))
+    if (validUserIds.length !== userIds.length) {
+      throw new ErrorWithStatus({
+        message: ADMIN_MESSAGES.INVALID_USER_IDS,
+        status: httpStatusCode.BAD_REQUEST
+      })
+    }
+    const result: BulkUserOperationResult = {
+      success: [],
+      failed: [],
+      total: userIds.length,
+      successCount: 0,
+      failedCount: 0
+    }
+    for (const userId of userIds) {
+      try {
+        const deleteRes = await databaseServices.users.deleteOne({ _id: new ObjectId(userId) })
+        if (deleteRes.deletedCount === 0) {
+          result.failed.push({ userId, reason: ADMIN_MESSAGES.USER_NOT_FOUND })
+          result.failedCount++
+          continue
+        }
+        result.success.push(userId)
+        result.successCount++
+      } catch (error) {
+        result.failed.push({ userId, reason: error instanceof Error ? error.message : 'Unknown error' })
+        result.failedCount++
+      }
+    }
+    return result
   }
 
   // Financial Management

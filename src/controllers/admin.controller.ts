@@ -10,7 +10,9 @@ import {
   ProjectStatusReqBody,
   NotificationMarkReadReqBody,
   TransactionFilterReqQuery,
-  GetAllUsersReqQuery
+  GetAllUsersReqQuery,
+  BulkUpdateUserStatusReqBody,
+  BulkDeleteUsersReqBody
 } from '~/models/requests/admin.requests'
 import { AdminTokenPayload } from '~/models/requests/admin.requests'
 
@@ -195,6 +197,25 @@ class AdminController {
     await adminService.deleteUser(userId)
     return new OK({
       message: ADMIN_MESSAGES.USER_DELETED_SUCCESSFULLY
+    }).send(res)
+  }
+
+  async bulkUpdateUserStatus(req: Request<ParamsDictionary, any, BulkUpdateUserStatusReqBody>, res: Response) {
+    const { userIds, verify } = req.body
+    console.log(userIds)
+    const result = await adminService.bulkUpdateUserStatus(userIds, verify)
+    return new OK({
+      message: ADMIN_MESSAGES.USER_STATUS_UPDATED,
+      data: result
+    }).send(res)
+  }
+
+  async bulkDeleteUsers(req: Request<ParamsDictionary, any, BulkDeleteUsersReqBody>, res: Response) {
+    const { userIds } = req.body
+    const result = await adminService.bulkDeleteUsers(userIds)
+    return new OK({
+      message: ADMIN_MESSAGES.USER_DELETED_SUCCESSFULLY,
+      data: result
     }).send(res)
   }
 

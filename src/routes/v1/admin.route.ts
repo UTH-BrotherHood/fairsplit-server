@@ -9,7 +9,9 @@ import {
   adminRefreshTokenValidation,
   categoryValidation,
   billStatusValidation,
-  getAllUsersValidation
+  getAllUsersValidation,
+  bulkUpdateUserStatusValidation,
+  bulkDeleteUsersValidation
 } from '~/middlewares/admin.middlewares'
 import { wrapRequestHandler } from '~/utils/wrapHandler'
 
@@ -80,11 +82,26 @@ adminRoute.get(
   wrapRequestHandler(adminController.getAllUsers)
 )
 adminRoute.get('/users/:userId', adminAccessTokenValidation, wrapRequestHandler(adminController.getUserById))
+
+adminRoute.patch(
+  '/users/bulk/status',
+  adminAccessTokenValidation,
+  bulkUpdateUserStatusValidation,
+  wrapRequestHandler(adminController.bulkUpdateUserStatus)
+)
 adminRoute.patch(
   '/users/:userId/status',
   adminAccessTokenValidation,
   wrapRequestHandler(adminController.updateUserStatus)
 )
+
+adminRoute.delete(
+  '/users/bulk',
+  adminAccessTokenValidation,
+  bulkDeleteUsersValidation,
+  wrapRequestHandler(adminController.bulkDeleteUsers)
+)
+
 adminRoute.delete('/users/:userId', adminAccessTokenValidation, wrapRequestHandler(adminController.deleteUser))
 
 /* ========================CATEGORY MANAGEMENT ROUTES======================== */

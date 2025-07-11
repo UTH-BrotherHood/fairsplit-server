@@ -48,3 +48,23 @@ export interface GetAllUsersReqQuery {
   verify?: 'verify' | 'verified' | 'unverify' | 'unverified'
   search?: string
 }
+
+export interface BulkUpdateUserStatusReqBody {
+  userIds: string[]
+  verify: 'verified' | 'unverified'
+}
+
+export interface BulkDeleteUsersReqBody {
+  userIds: string[]
+}
+
+export interface BulkUserOperationResult {
+  success: string[]
+  failed: Array<{
+    userId: string
+    reason: string
+  }>
+  total: number
+  successCount: number
+  failedCount: number
+}

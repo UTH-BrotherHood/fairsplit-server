@@ -310,3 +310,53 @@ export const getAllUsersValidation = validate(
     }
   })
 )
+
+export const bulkUpdateUserStatusValidation = validate(
+  checkSchema(
+    {
+      userIds: {
+        notEmpty: { errorMessage: 'User IDs are required' },
+        isArray: { errorMessage: 'User IDs must be an array' },
+        custom: {
+          options: (value) => {
+            if (!Array.isArray(value) || value.length === 0) throw new Error('User IDs array cannot be empty')
+            if (value.length > 100) throw new Error('Cannot update more than 100 users at once')
+            return true
+          }
+        }
+      },
+      'userIds.*': {
+        isString: { errorMessage: 'Each user ID must be a string' },
+        isMongoId: { errorMessage: 'Each user ID must be a valid MongoDB ObjectId' }
+      },
+      verify: {
+        notEmpty: { errorMessage: 'Verify status is required' },
+        isIn: {
+          options: [['verified', 'unverified']],
+          errorMessage: 'Verify must be either "verified" or "unverified"'
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const bulkDeleteUsersValidation = validate(
+  checkSchema({
+    userIds: {
+      notEmpty: { errorMessage: 'User IDs are required' },
+      isArray: { errorMessage: 'User IDs must be an array' },
+      custom: {
+        options: (value) => {
+          if (!Array.isArray(value) || value.length === 0) throw new Error('User IDs array cannot be empty')
+          if (value.length > 100) throw new Error('Cannot delete more than 100 users at once')
+          return true
+        }
+      }
+    },
+    'userIds.*': {
+      isString: { errorMessage: 'Each user ID must be a string' },
+      isMongoId: { errorMessage: 'Each user ID must be a valid MongoDB ObjectId' }
+    }
+  })
+)
