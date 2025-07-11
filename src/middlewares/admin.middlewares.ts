@@ -433,3 +433,43 @@ export const updateGroupStatusValidation = validate(
     }
   })
 )
+
+export const bulkDeleteShoppingListsValidation = validate(
+  checkSchema({
+    listIds: {
+      notEmpty: { errorMessage: 'Shopping list IDs are required' },
+      isArray: { errorMessage: 'Shopping list IDs must be an array' },
+      custom: {
+        options: (value) => {
+          if (!Array.isArray(value) || value.length === 0) throw new Error('Shopping list IDs array cannot be empty')
+          if (value.length > 100) throw new Error('Cannot delete more than 100 shopping lists at once')
+          return true
+        }
+      }
+    },
+    'listIds.*': {
+      isString: { errorMessage: 'Each shopping list ID must be a string' },
+      isMongoId: { errorMessage: 'Each shopping list ID must be a valid MongoDB ObjectId' }
+    }
+  })
+)
+
+export const bulkDeleteShoppingListItemsValidation = validate(
+  checkSchema({
+    itemIds: {
+      notEmpty: { errorMessage: 'Item IDs are required' },
+      isArray: { errorMessage: 'Item IDs must be an array' },
+      custom: {
+        options: (value) => {
+          if (!Array.isArray(value) || value.length === 0) throw new Error('Item IDs array cannot be empty')
+          if (value.length > 100) throw new Error('Cannot delete more than 100 items at once')
+          return true
+        }
+      }
+    },
+    'itemIds.*': {
+      isString: { errorMessage: 'Each item ID must be a string' },
+      isMongoId: { errorMessage: 'Each item ID must be a valid MongoDB ObjectId' }
+    }
+  })
+)

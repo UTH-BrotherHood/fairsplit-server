@@ -15,7 +15,9 @@ import {
   bulkDeleteCategoriesValidation,
   bulkDeleteBillsValidation,
   bulkDeleteGroupsValidation,
-  updateGroupStatusValidation
+  updateGroupStatusValidation,
+  bulkDeleteShoppingListsValidation,
+  bulkDeleteShoppingListItemsValidation
 } from '~/middlewares/admin.middlewares'
 import { wrapRequestHandler } from '~/utils/wrapHandler'
 
@@ -168,6 +170,41 @@ adminRoute.patch(
   adminAccessTokenValidation,
   updateGroupStatusValidation,
   wrapRequestHandler(adminController.updateGroupStatus)
+)
+
+/* ========================SHOPPING LIST MANAGEMENT ROUTES======================== */
+adminRoute.get('/shopping-lists', adminAccessTokenValidation, wrapRequestHandler(adminController.getAllShoppingLists))
+adminRoute.get(
+  '/shopping-lists/:listId',
+  adminAccessTokenValidation,
+  wrapRequestHandler(adminController.getShoppingListById)
+)
+adminRoute.delete(
+  '/shopping-lists/bulk',
+  adminAccessTokenValidation,
+  bulkDeleteShoppingListsValidation,
+  wrapRequestHandler(adminController.bulkDeleteShoppingLists)
+)
+adminRoute.delete(
+  '/shopping-lists/:listId',
+  adminAccessTokenValidation,
+  wrapRequestHandler(adminController.deleteShoppingList)
+)
+adminRoute.get(
+  '/shopping-lists/:listId/items',
+  adminAccessTokenValidation,
+  wrapRequestHandler(adminController.getShoppingListItems)
+)
+adminRoute.delete(
+  '/shopping-lists/:listId/items/bulk',
+  adminAccessTokenValidation,
+  bulkDeleteShoppingListItemsValidation,
+  wrapRequestHandler(adminController.bulkDeleteShoppingListItems)
+)
+adminRoute.delete(
+  '/shopping-lists/:listId/items/:itemId',
+  adminAccessTokenValidation,
+  wrapRequestHandler(adminController.deleteShoppingListItem)
 )
 
 export default adminRoute

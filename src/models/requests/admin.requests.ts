@@ -84,3 +84,11 @@ export interface BulkDeleteGroupsReqBody {
 export interface UpdateGroupStatusReqBody {
   status: string
 }
+
+export interface BulkDeleteShoppingListsReqBody {
+  listIds: string[]
+}
+
+export interface BulkDeleteShoppingListItemsReqBody {
+  itemIds: string[]
+}

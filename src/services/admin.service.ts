@@ -48,6 +48,21 @@ interface BulkGroupOperationResult {
   failedCount: number
 }
 
+interface BulkShoppingListOperationResult {
+  success: string[]
+  failed: Array<{ listId: string; reason: string }>
+  total: number
+  successCount: number
+  failedCount: number
+}
+interface BulkShoppingListItemOperationResult {
+  success: string[]
+  failed: Array<{ itemId: string; reason: string }>
+  total: number
+  successCount: number
+  failedCount: number
+}
+
 const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = 3600 // 1 hour in seconds
 const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = 604800 // 7 days in seconds
 const MAX_REFRESH_TOKEN_EXPIRES_IN = 2592000 // 30 days in seconds
@@ -1142,6 +1157,156 @@ class AdminService {
     }
     // Giả sử group có trường members là mảng userId
     return group.members || []
+  }
+
+  async getAllShoppingLists(
+    paginationQuery: PaginationQuery & {
+      search?: string
+      groupId?: string
+      ownerId?: string
+      status?: string
+      startDate?: Date
+      endDate?: Date
+      tag?: string
+      sortBy?: string
+      sortOrder?: 'ASC' | 'DESC'
+    }
+  ) {
+    const query: Record<string, any> = {}
+    if (paginationQuery.search) {
+      query.$or = [
+        { name: { $regex: paginationQuery.search, $options: 'i' } },
+        { description: { $regex: paginationQuery.search, $options: 'i' } }
+      ]
+    }
+    if (paginationQuery.groupId) {
+      query.groupId = new ObjectId(paginationQuery.groupId)
+    }
+    if (paginationQuery.ownerId) {
+      query.ownerId = new ObjectId(paginationQuery.ownerId)
+    }
+    if (paginationQuery.status) {
+      query.status = paginationQuery.status
+    }
+    if (paginationQuery.tag) {
+      query.tags = paginationQuery.tag
+    }
+    if (paginationQuery.startDate || paginationQuery.endDate) {
+      query.createdAt = {}
+      if (paginationQuery.startDate) query.createdAt.$gte = new Date(paginationQuery.startDate)
+      if (paginationQuery.endDate) query.createdAt.$lte = new Date(paginationQuery.endDate)
+    }
+    let sort: Record<string, 1 | -1> = { createdAt: -1 }
+    if (paginationQuery.sortBy) {
+      const order = paginationQuery.sortOrder === 'ASC' ? 1 : -1
+      sort = { [paginationQuery.sortBy]: order }
+    }
+    return PaginationUtils.paginate(databaseServices.shoppingLists, query, { sort }, paginationQuery)
+  }
+
+  async getShoppingListById(listId: string) {
+    const list = await databaseServices.shoppingLists.findOne({ _id: new ObjectId(listId) })
+    if (!list) {
+      throw new ErrorWithStatus({ message: 'Shopping list not found', status: httpStatusCode.NOT_FOUND })
+    }
+    return list
+  }
+
+  async bulkDeleteShoppingLists(listIds: string[]): Promise<BulkShoppingListOperationResult> {
+    if (!listIds || listIds.length === 0) {
+      throw new ErrorWithStatus({ message: 'No shopping lists to delete', status: httpStatusCode.BAD_REQUEST })
+    }
+    const result: BulkShoppingListOperationResult = {
+      success: [],
+      failed: [],
+      total: listIds.length,
+      successCount: 0,
+      failedCount: 0
+    }
+    for (const listId of listIds) {
+      try {
+        const list = await databaseServices.shoppingLists.findOne({ _id: new ObjectId(listId) })
+        if (!list) {
+          result.failed.push({ listId, reason: 'Shopping list not found' })
+          result.failedCount++
+          continue
+        }
+        await databaseServices.shoppingLists.deleteOne({ _id: new ObjectId(listId) })
+        result.success.push(listId)
+        result.successCount++
+      } catch (error) {
+        result.failed.push({ listId, reason: error instanceof Error ? error.message : 'Unknown error' })
+        result.failedCount++
+      }
+    }
+    return result
+  }
+
+  async deleteShoppingList(listId: string) {
+    const list = await databaseServices.shoppingLists.findOne({ _id: new ObjectId(listId) })
+    if (!list) {
+      throw new ErrorWithStatus({ message: 'Shopping list not found', status: httpStatusCode.NOT_FOUND })
+    }
+    await databaseServices.shoppingLists.deleteOne({ _id: new ObjectId(listId) })
+  }
+
+  async getShoppingListItems(listId: string) {
+    const list = await databaseServices.shoppingLists.findOne({ _id: new ObjectId(listId) })
+    if (!list) {
+      throw new ErrorWithStatus({ message: 'Shopping list not found', status: httpStatusCode.NOT_FOUND })
+    }
+    // Giả sử list có trường items là mảng
+    return list.items || []
+  }
+
+  async bulkDeleteShoppingListItems(listId: string, itemIds: string[]): Promise<BulkShoppingListItemOperationResult> {
+    if (!itemIds || itemIds.length === 0) {
+      throw new ErrorWithStatus({ message: 'No items to delete', status: httpStatusCode.BAD_REQUEST })
+    }
+    const list = await databaseServices.shoppingLists.findOne({ _id: new ObjectId(listId) })
+    if (!list) {
+      throw new ErrorWithStatus({ message: 'Shopping list not found', status: httpStatusCode.NOT_FOUND })
+    }
+    const result: BulkShoppingListItemOperationResult = {
+      success: [],
+      failed: [],
+      total: itemIds.length,
+      successCount: 0,
+      failedCount: 0
+    }
+    for (const itemId of itemIds) {
+      try {
+        // Giả sử mỗi item có _id là ObjectId
+        const itemIndex = (list.items || []).findIndex((item: any) => item._id.toString() === itemId)
+        if (itemIndex === -1) {
+          result.failed.push({ itemId, reason: 'Item not found' })
+          result.failedCount++
+          continue
+        }
+        // Xóa item khỏi mảng
+        await databaseServices.shoppingLists.updateOne(
+          { _id: new ObjectId(listId) },
+          { $pull: { items: { _id: new ObjectId(itemId) } } }
+        )
+        result.success.push(itemId)
+        result.successCount++
+      } catch (error) {
+        result.failed.push({ itemId, reason: error instanceof Error ? error.message : 'Unknown error' })
+        result.failedCount++
+      }
+    }
+    return result
+  }
+
+  async deleteShoppingListItem(listId: string, itemId: string) {
+    const list = await databaseServices.shoppingLists.findOne({ _id: new ObjectId(listId) })
+    if (!list) {
+      throw new ErrorWithStatus({ message: 'Shopping list not found', status: httpStatusCode.NOT_FOUND })
+    }
+    await databaseServices.shoppingLists.updateOne(
+      { _id: new ObjectId(listId) },
+      { $pull: { items: { _id: new ObjectId(itemId) } } }
+    )
   }
 }
 

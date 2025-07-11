@@ -16,7 +16,9 @@ import {
   BulkDeleteCategoriesReqBody,
   BulkDeleteBillsReqBody,
   BulkDeleteGroupsReqBody,
-  UpdateGroupStatusReqBody
+  UpdateGroupStatusReqBody,
+  BulkDeleteShoppingListsReqBody,
+  BulkDeleteShoppingListItemsReqBody
 } from '~/models/requests/admin.requests'
 import { AdminTokenPayload } from '~/models/requests/admin.requests'
 
@@ -405,6 +407,86 @@ class AdminController {
     return new OK({
       message: 'Get group members successfully',
       data: { members }
+    }).send(res)
+  }
+
+  async getAllShoppingLists(req: Request, res: Response) {
+    const { page, limit, search, groupId, ownerId, status, startDate, endDate, tag, sortBy, sortOrder } = req.query
+    const result = await adminService.getAllShoppingLists({
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      search: search as string,
+      groupId: groupId as string,
+      ownerId: ownerId as string,
+      status: status as string,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
+      tag: tag as string,
+      sortBy: sortBy as string,
+      sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC'
+    })
+    return new OK({
+      message: 'Get all shopping list successfully',
+      data: {
+        shoppingLists: result.items,
+        pagination: result.pagination
+      }
+    }).send(res)
+  }
+
+  async getShoppingListById(req: Request, res: Response) {
+    const { listId } = req.params
+    const list = await adminService.getShoppingListById(listId)
+    return new OK({
+      message: 'Get shopping list by id successfully',
+      data: { list }
+    }).send(res)
+  }
+
+  async bulkDeleteShoppingLists(req: Request<ParamsDictionary, any, BulkDeleteShoppingListsReqBody>, res: Response) {
+    const { listIds } = req.body
+    const result = await adminService.bulkDeleteShoppingLists(listIds)
+    return new OK({
+      message: 'Bulk delete shopping lists completed',
+      data: result
+    }).send(res)
+  }
+
+  async deleteShoppingList(req: Request, res: Response) {
+    const { listId } = req.params
+    await adminService.deleteShoppingList(listId)
+    return new OK({
+      message: 'Delete shopping list successfully'
+    }).send(res)
+  }
+
+  async getShoppingListItems(req: Request, res: Response) {
+    const { listId } = req.params
+    const items = await adminService.getShoppingListItems(listId)
+    return new OK({
+      message: 'Get shopping list items successfully',
+      data: { items }
+    }).send(res)
+  }
+
+  async bulkDeleteShoppingListItems(
+    req: Request<ParamsDictionary, any, BulkDeleteShoppingListItemsReqBody>,
+    res: Response
+  ) {
+    const { listId } = req.params
+    const { itemIds } = req.body
+    const result = await adminService.bulkDeleteShoppingListItems(listId, itemIds)
+    return new OK({
+      message: 'Bulk delete shopping list items completed',
+      data: result
+    }).send(res)
+  }
+
+  async deleteShoppingListItem(req: Request, res: Response) {
+    const { listId, itemId } = req.params
+    await adminService.deleteShoppingListItem(listId, itemId)
+    return new OK({
+      message: 'Delete shopping list item successfully'
     }).send(res)
   }
 }
