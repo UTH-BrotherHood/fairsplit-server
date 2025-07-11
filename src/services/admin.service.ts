@@ -376,7 +376,6 @@ class AdminService {
     const query: Record<string, any> = {}
 
     if (paginationQuery.verify) {
-      // Map query parameter to enum values
       if (paginationQuery.verify.toLowerCase() === 'verify' || paginationQuery.verify.toLowerCase() === 'verified') {
         query.verify = UserVerificationStatus.Verified
       } else if (
@@ -385,7 +384,6 @@ class AdminService {
       ) {
         query.verify = UserVerificationStatus.Unverified
       } else {
-        // If invalid value, don't filter by verify status
         query.verify = paginationQuery.verify
       }
     }
@@ -398,7 +396,14 @@ class AdminService {
       ]
     }
 
-    return PaginationUtils.paginate(databaseServices.users, query, { sort: { createdAt: -1 } }, paginationQuery)
+    const { items, pagination } = await PaginationUtils.paginate(
+      databaseServices.users,
+      query,
+      { sort: { createdAt: -1 } },
+      paginationQuery
+    )
+
+    return { items, pagination }
   }
 
   async getUserById(userId: string) {

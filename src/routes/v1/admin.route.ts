@@ -118,8 +118,4 @@ adminRoute.put(
 )
 adminRoute.delete('/bills/:billId', adminAccessTokenValidation, wrapRequestHandler(adminController.deleteBill))
 
-/* ========================ERROR PAGES======================== */
-adminRoute.get('/access-forbidden', wrapRequestHandler(adminController.adminAccessForbiddenPageGET))
-adminRoute.get('/error-page', wrapRequestHandler(adminController.adminErrorHandlerPageGET))
-
 export default adminRoute

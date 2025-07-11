@@ -164,8 +164,12 @@ class AdminController {
       verify: verify as string,
       search: search as string
     })
-    return new OK({
-      data: result
+    new OK({
+      message: 'Get all user successfully',
+      data: {
+        users: result.items,
+        pagination: result.pagination
+      }
     }).send(res)
   }
 
@@ -273,21 +277,6 @@ class AdminController {
     return new OK({
       message: ADMIN_MESSAGES.BILL_DELETED_SUCCESSFULLY
     }).send(res)
-  }
-
-  // Error Pages
-  async adminAccessForbiddenPageGET(req: Request, res: Response) {
-    return res.status(httpStatusCode.FORBIDDEN).json({
-      status: 'error',
-      message: ADMIN_MESSAGES.ADMIN_ACCESS_REQUIRED
-    })
-  }
-
-  async adminErrorHandlerPageGET(req: Request, res: Response) {
-    return res.status(httpStatusCode.INTERNAL_SERVER_ERROR).json({
-      status: 'error',
-      message: ADMIN_MESSAGES.INTERNAL_SERVER_ERROR
-    })
   }
 }
 
