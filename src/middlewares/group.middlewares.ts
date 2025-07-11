@@ -23,7 +23,21 @@ export const createGroupValidation = validate(
     },
     avatarUrl: {
       optional: true,
-      isURL: true
+      isString: {
+        errorMessage: 'Avatar URL must be a string'
+      },
+      isLength: {
+        options: {
+          min: 0,
+          max: 2000
+        },
+        errorMessage: 'Avatar URL length must be between 0 and 2000 characters'
+      },
+      trim: true,
+      matches: {
+        options: /^https?:\/\//,
+        errorMessage: 'Avatar URL must be a valid HTTP/HTTPS URL'
+      }
     },
     members: {
       optional: true,

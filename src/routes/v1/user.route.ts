@@ -1,6 +1,8 @@
 import { Router } from 'express'
+import { uploadSingle } from '~/config/upload/multer'
 import userController from '~/controllers/user.controller'
 import { accessTokenValidation } from '~/middlewares/auth.middlewares'
+import { uploadMiddleware } from '~/middlewares/upload.middlware'
 import {
   changePasswordValidation,
   userPreferencesValidation,
@@ -16,7 +18,14 @@ const userRoute = Router()
  * Profile Management Routes
  */
 userRoute.get('/me', accessTokenValidation, wrapRequestHandler(userController.getMe))
-userRoute.patch('/me', accessTokenValidation, updateProfileValidation, wrapRequestHandler(userController.updateMe))
+userRoute.patch(
+  '/me',
+  uploadSingle('avatar'),
+  uploadMiddleware,
+  accessTokenValidation,
+  updateProfileValidation,
+  wrapRequestHandler(userController.updateMe)
+)
 userRoute.patch(
   '/change-password',
   accessTokenValidation,

@@ -200,8 +200,20 @@ export const updateProfileValidation = validate(
     },
     avatarUrl: {
       optional: true,
-      isURL: {
-        errorMessage: 'Avatar URL must be a valid URL'
+      isString: {
+        errorMessage: 'Avatar URL must be a string'
+      },
+      isLength: {
+        options: {
+          min: 0,
+          max: 2000
+        },
+        errorMessage: 'Avatar URL length must be between 0 and 2000 characters'
+      },
+      trim: true,
+      matches: {
+        options: /^https?:\/\//,
+        errorMessage: 'Avatar URL must be a valid HTTP/HTTPS URL'
       }
     },
     dateOfBirth: {

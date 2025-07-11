@@ -9,13 +9,22 @@ import {
   addMemberValidation,
   updateMemberValidation
 } from '~/middlewares/group.middlewares'
+import { uploadMiddleware } from '~/middlewares/upload.middlware'
+import { uploadSingle } from '~/config/upload/multer'
 
 const groupRoute = Router()
 
 /**
  * Group Management Routes
  */
-groupRoute.post('/', accessTokenValidation, createGroupValidation, wrapRequestHandler(groupController.createGroup))
+groupRoute.post(
+  '/',
+  accessTokenValidation,
+  uploadSingle('avatar'),
+  uploadMiddleware,
+  createGroupValidation,
+  wrapRequestHandler(groupController.createGroup)
+)
 
 groupRoute.get('/my-groups', accessTokenValidation, wrapRequestHandler(groupController.getMyGroups))
 
@@ -24,6 +33,8 @@ groupRoute.get('/:groupId', accessTokenValidation, groupIdValidation, wrapReques
 groupRoute.patch(
   '/:groupId',
   accessTokenValidation,
+  uploadSingle('avatar'),
+  uploadMiddleware,
   updateGroupValidation,
   wrapRequestHandler(groupController.updateGroup)
 )
