@@ -11,7 +11,8 @@ import {
   billStatusValidation,
   getAllUsersValidation,
   bulkUpdateUserStatusValidation,
-  bulkDeleteUsersValidation
+  bulkDeleteUsersValidation,
+  bulkDeleteCategoriesValidation
 } from '~/middlewares/admin.middlewares'
 import { wrapRequestHandler } from '~/utils/wrapHandler'
 
@@ -118,10 +119,12 @@ adminRoute.put(
   categoryValidation,
   wrapRequestHandler(adminController.updateCategory)
 )
+
 adminRoute.delete(
-  '/categories/:categoryId',
+  '/categories/bulk',
   adminAccessTokenValidation,
-  wrapRequestHandler(adminController.deleteCategory)
+  bulkDeleteCategoriesValidation,
+  wrapRequestHandler(adminController.bulkDeleteCategories)
 )
 
 /* ========================BILL MANAGEMENT ROUTES======================== */

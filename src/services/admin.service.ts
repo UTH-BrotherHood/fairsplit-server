@@ -24,6 +24,14 @@ interface AdminTokenPayload extends TokenPayload {
   adminId: string
 }
 
+interface BulkCategoryOperationResult {
+  success: string[]
+  failed: Array<{ categoryId: string; reason: string }>
+  total: number
+  successCount: number
+  failedCount: number
+}
+
 const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = 3600 // 1 hour in seconds
 const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = 604800 // 7 days in seconds
 const MAX_REFRESH_TOKEN_EXPIRES_IN = 2592000 // 30 days in seconds
@@ -788,8 +796,22 @@ class AdminService {
   }
 
   // Category Management
-  async getAllCategories(paginationQuery: PaginationQuery) {
-    return PaginationUtils.paginate(databaseServices.categories, {}, { sort: { createdAt: -1 } }, paginationQuery)
+  async getAllCategories(
+    paginationQuery: PaginationQuery & { search?: string; sortBy?: string; sortOrder?: 'ASC' | 'DESC' }
+  ) {
+    const query: Record<string, any> = {}
+    if (paginationQuery.search) {
+      query.$or = [
+        { name: { $regex: paginationQuery.search, $options: 'i' } },
+        { description: { $regex: paginationQuery.search, $options: 'i' } }
+      ]
+    }
+    let sort: Record<string, 1 | -1> = { createdAt: -1 }
+    if (paginationQuery.sortBy) {
+      const order = paginationQuery.sortOrder === 'ASC' ? 1 : -1
+      sort = { [paginationQuery.sortBy]: order }
+    }
+    return PaginationUtils.paginate(databaseServices.categories, query, { sort }, paginationQuery)
   }
 
   async createCategory(data: { name: string; description?: string }) {
@@ -826,16 +848,37 @@ class AdminService {
     return { categoryId }
   }
 
-  async deleteCategory(categoryId: string) {
-    const category = await databaseServices.categories.findOne({ _id: new ObjectId(categoryId) })
-    if (!category) {
+  async bulkDeleteCategories(categoryIds: string[]): Promise<BulkCategoryOperationResult> {
+    if (!categoryIds || categoryIds.length === 0) {
       throw new ErrorWithStatus({
-        message: ADMIN_MESSAGES.CATEGORY_NOT_FOUND,
-        status: httpStatusCode.NOT_FOUND
+        message: 'No categories to delete',
+        status: httpStatusCode.BAD_REQUEST
       })
     }
-
-    await databaseServices.categories.deleteOne({ _id: new ObjectId(categoryId) })
+    const result: BulkCategoryOperationResult = {
+      success: [],
+      failed: [],
+      total: categoryIds.length,
+      successCount: 0,
+      failedCount: 0
+    }
+    for (const categoryId of categoryIds) {
+      try {
+        const category = await databaseServices.categories.findOne({ _id: new ObjectId(categoryId) })
+        if (!category) {
+          result.failed.push({ categoryId, reason: 'Category not found' })
+          result.failedCount++
+          continue
+        }
+        await databaseServices.categories.deleteOne({ _id: new ObjectId(categoryId) })
+        result.success.push(categoryId)
+        result.successCount++
+      } catch (error) {
+        result.failed.push({ categoryId, reason: error instanceof Error ? error.message : 'Unknown error' })
+        result.failedCount++
+      }
+    }
+    return result
   }
 
   // Bill Management

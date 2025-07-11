@@ -360,3 +360,23 @@ export const bulkDeleteUsersValidation = validate(
     }
   })
 )
+
+export const bulkDeleteCategoriesValidation = validate(
+  checkSchema({
+    categoryIds: {
+      notEmpty: { errorMessage: 'Category IDs are required' },
+      isArray: { errorMessage: 'Category IDs must be an array' },
+      custom: {
+        options: (value) => {
+          if (!Array.isArray(value) || value.length === 0) throw new Error('Category IDs array cannot be empty')
+          if (value.length > 100) throw new Error('Cannot delete more than 100 categories at once')
+          return true
+        }
+      }
+    },
+    'categoryIds.*': {
+      isString: { errorMessage: 'Each category ID must be a string' },
+      isMongoId: { errorMessage: 'Each category ID must be a valid MongoDB ObjectId' }
+    }
+  })
+)

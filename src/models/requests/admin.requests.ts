@@ -68,3 +68,7 @@ export interface BulkUserOperationResult {
   successCount: number
   failedCount: number
 }
+
+export interface BulkDeleteCategoriesReqBody {
+  categoryIds: string[]
+}

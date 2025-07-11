@@ -12,7 +12,8 @@ import {
   TransactionFilterReqQuery,
   GetAllUsersReqQuery,
   BulkUpdateUserStatusReqBody,
-  BulkDeleteUsersReqBody
+  BulkDeleteUsersReqBody,
+  BulkDeleteCategoriesReqBody
 } from '~/models/requests/admin.requests'
 import { AdminTokenPayload } from '~/models/requests/admin.requests'
 
@@ -229,7 +230,14 @@ class AdminController {
 
   // Category Management
   async getAllCategories(req: Request, res: Response) {
-    const result = await adminService.getAllCategories(req.query)
+    const { page, limit, search, sortBy, sortOrder } = req.query
+    const result = await adminService.getAllCategories({
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      search: search as string,
+      sortBy: sortBy as string,
+      sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC'
+    })
     return new OK({
       data: result
     }).send(res)
@@ -252,11 +260,12 @@ class AdminController {
     }).send(res)
   }
 
-  async deleteCategory(req: Request, res: Response) {
-    const { categoryId } = req.params
-    await adminService.deleteCategory(categoryId)
+  async bulkDeleteCategories(req: Request<ParamsDictionary, any, BulkDeleteCategoriesReqBody>, res: Response) {
+    const { categoryIds } = req.body
+    const result = await adminService.bulkDeleteCategories(categoryIds)
     return new OK({
-      message: ADMIN_MESSAGES.CATEGORY_DELETED_SUCCESSFULLY
+      message: 'Bulk delete categories completed',
+      data: result
     }).send(res)
   }
 
