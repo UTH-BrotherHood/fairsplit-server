@@ -119,7 +119,8 @@ adminRoute.post(
   categoryValidation,
   wrapRequestHandler(adminController.createCategory)
 )
-adminRoute.put(
+
+adminRoute.patch(
   '/categories/:categoryId',
   adminAccessTokenValidation,
   categoryValidation,
