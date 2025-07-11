@@ -12,7 +12,8 @@ import {
   getAllUsersValidation,
   bulkUpdateUserStatusValidation,
   bulkDeleteUsersValidation,
-  bulkDeleteCategoriesValidation
+  bulkDeleteCategoriesValidation,
+  bulkDeleteBillsValidation
 } from '~/middlewares/admin.middlewares'
 import { wrapRequestHandler } from '~/utils/wrapHandler'
 
@@ -137,5 +138,11 @@ adminRoute.put(
   wrapRequestHandler(adminController.updateBillStatus)
 )
 adminRoute.delete('/bills/:billId', adminAccessTokenValidation, wrapRequestHandler(adminController.deleteBill))
+adminRoute.delete(
+  '/bills/bulk',
+  adminAccessTokenValidation,
+  bulkDeleteBillsValidation,
+  wrapRequestHandler(adminController.bulkDeleteBills)
+)
 
 export default adminRoute

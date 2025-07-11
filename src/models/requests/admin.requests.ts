@@ -72,3 +72,7 @@ export interface BulkUserOperationResult {
 export interface BulkDeleteCategoriesReqBody {
   categoryIds: string[]
 }
+
+export interface BulkDeleteBillsReqBody {
+  billIds: string[]
+}

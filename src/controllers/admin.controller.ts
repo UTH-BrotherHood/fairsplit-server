@@ -13,7 +13,8 @@ import {
   GetAllUsersReqQuery,
   BulkUpdateUserStatusReqBody,
   BulkDeleteUsersReqBody,
-  BulkDeleteCategoriesReqBody
+  BulkDeleteCategoriesReqBody,
+  BulkDeleteBillsReqBody
 } from '~/models/requests/admin.requests'
 import { AdminTokenPayload } from '~/models/requests/admin.requests'
 
@@ -180,6 +181,7 @@ class AdminController {
     const { userId } = req.params
     const user = await adminService.getUserById(userId)
     return new OK({
+      message: 'Get user by id successfully',
       data: { user }
     }).send(res)
   }
@@ -239,7 +241,11 @@ class AdminController {
       sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC'
     })
     return new OK({
-      data: result
+      message: 'Get all category successfully',
+      data: {
+        categories: result.items,
+        pagination: result.pagination
+      }
     }).send(res)
   }
 
@@ -271,15 +277,27 @@ class AdminController {
 
   // Bill Management
   async getAllBills(req: Request, res: Response) {
-    const { startDate, endDate, status, ...paginationQuery } = req.query
+    const { page, limit, search, groupId, status, startDate, endDate, minAmount, maxAmount, sortBy, sortOrder } =
+      req.query
     const result = await adminService.getAllBills({
-      ...paginationQuery,
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      search: search as string,
+      groupId: groupId as string,
+      status: status as string,
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
-      status: status as string
+      minAmount: minAmount ? Number(minAmount) : undefined,
+      maxAmount: maxAmount ? Number(maxAmount) : undefined,
+      sortBy: sortBy as string,
+      sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC'
     })
     return new OK({
-      data: result
+      message: 'Get all bill successfully',
+      data: {
+        bills: result.items,
+        pagination: result.pagination
+      }
     }).send(res)
   }
 
@@ -306,6 +324,15 @@ class AdminController {
     await adminService.deleteBill(billId)
     return new OK({
       message: ADMIN_MESSAGES.BILL_DELETED_SUCCESSFULLY
+    }).send(res)
+  }
+
+  async bulkDeleteBills(req: Request<ParamsDictionary, any, BulkDeleteBillsReqBody>, res: Response) {
+    const { billIds } = req.body
+    const result = await adminService.bulkDeleteBills(billIds)
+    return new OK({
+      message: 'Bulk delete bills completed',
+      data: result
     }).send(res)
   }
 }

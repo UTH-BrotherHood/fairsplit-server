@@ -32,6 +32,14 @@ interface BulkCategoryOperationResult {
   failedCount: number
 }
 
+interface BulkBillOperationResult {
+  success: string[]
+  failed: Array<{ billId: string; reason: string }>
+  total: number
+  successCount: number
+  failedCount: number
+}
+
 const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = 3600 // 1 hour in seconds
 const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = 604800 // 7 days in seconds
 const MAX_REFRESH_TOKEN_EXPIRES_IN = 2592000 // 30 days in seconds
@@ -882,21 +890,48 @@ class AdminService {
   }
 
   // Bill Management
-  async getAllBills(paginationQuery: PaginationQuery & { startDate?: Date; endDate?: Date; status?: string }) {
-    const query: Record<string, any> = {}
-
-    if (paginationQuery.startDate && paginationQuery.endDate) {
-      query.createdAt = {
-        $gte: paginationQuery.startDate,
-        $lte: paginationQuery.endDate
-      }
+  async getAllBills(
+    paginationQuery: PaginationQuery & {
+      search?: string
+      groupId?: string
+      status?: string
+      startDate?: Date
+      endDate?: Date
+      minAmount?: number
+      maxAmount?: number
+      sortBy?: string
+      sortOrder?: 'ASC' | 'DESC'
     }
-
+  ) {
+    const query: Record<string, any> = {}
+    if (paginationQuery.search) {
+      query.$or = [
+        { title: { $regex: paginationQuery.search, $options: 'i' } },
+        { description: { $regex: paginationQuery.search, $options: 'i' } }
+      ]
+    }
+    if (paginationQuery.groupId) {
+      query.groupId = new ObjectId(paginationQuery.groupId)
+    }
     if (paginationQuery.status) {
       query.status = paginationQuery.status
     }
-
-    return PaginationUtils.paginate(databaseServices.bills, query, { sort: { createdAt: -1 } }, paginationQuery)
+    if (paginationQuery.startDate || paginationQuery.endDate) {
+      query.createdAt = {}
+      if (paginationQuery.startDate) query.createdAt.$gte = new Date(paginationQuery.startDate)
+      if (paginationQuery.endDate) query.createdAt.$lte = new Date(paginationQuery.endDate)
+    }
+    if (paginationQuery.minAmount || paginationQuery.maxAmount) {
+      query.amount = {}
+      if (paginationQuery.minAmount) query.amount.$gte = paginationQuery.minAmount
+      if (paginationQuery.maxAmount) query.amount.$lte = paginationQuery.maxAmount
+    }
+    let sort: Record<string, 1 | -1> = { createdAt: -1 }
+    if (paginationQuery.sortBy) {
+      const order = paginationQuery.sortOrder === 'ASC' ? 1 : -1
+      sort = { [paginationQuery.sortBy]: order }
+    }
+    return PaginationUtils.paginate(databaseServices.bills, query, { sort }, paginationQuery)
   }
 
   async getBillById(billId: string) {
@@ -943,6 +978,39 @@ class AdminService {
     }
 
     await databaseServices.bills.deleteOne({ _id: new ObjectId(billId) })
+  }
+
+  async bulkDeleteBills(billIds: string[]): Promise<BulkBillOperationResult> {
+    if (!billIds || billIds.length === 0) {
+      throw new ErrorWithStatus({
+        message: 'No bills to delete',
+        status: httpStatusCode.BAD_REQUEST
+      })
+    }
+    const result: BulkBillOperationResult = {
+      success: [],
+      failed: [],
+      total: billIds.length,
+      successCount: 0,
+      failedCount: 0
+    }
+    for (const billId of billIds) {
+      try {
+        const bill = await databaseServices.bills.findOne({ _id: new ObjectId(billId) })
+        if (!bill) {
+          result.failed.push({ billId, reason: 'Bill not found' })
+          result.failedCount++
+          continue
+        }
+        await databaseServices.bills.deleteOne({ _id: new ObjectId(billId) })
+        result.success.push(billId)
+        result.successCount++
+      } catch (error) {
+        result.failed.push({ billId, reason: error instanceof Error ? error.message : 'Unknown error' })
+        result.failedCount++
+      }
+    }
+    return result
   }
 }
 

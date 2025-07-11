@@ -380,3 +380,23 @@ export const bulkDeleteCategoriesValidation = validate(
     }
   })
 )
+
+export const bulkDeleteBillsValidation = validate(
+  checkSchema({
+    billIds: {
+      notEmpty: { errorMessage: 'Bill IDs are required' },
+      isArray: { errorMessage: 'Bill IDs must be an array' },
+      custom: {
+        options: (value) => {
+          if (!Array.isArray(value) || value.length === 0) throw new Error('Bill IDs array cannot be empty')
+          if (value.length > 100) throw new Error('Cannot delete more than 100 bills at once')
+          return true
+        }
+      }
+    },
+    'billIds.*': {
+      isString: { errorMessage: 'Each bill ID must be a string' },
+      isMongoId: { errorMessage: 'Each bill ID must be a valid MongoDB ObjectId' }
+    }
+  })
+)
