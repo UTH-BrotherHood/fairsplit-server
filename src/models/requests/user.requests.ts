@@ -57,8 +57,15 @@ export interface ResendVerificationSMSReqBody {
 
 export interface UpdateMeReqBody {
   username?: string
+  email?: string
   avatarUrl?: string
   dateOfBirth?: string
+  privacySettings?:
+    | string
+    | {
+        profileVisibility?: 'public' | 'friends' | 'private'
+        friendRequests?: 'everyone' | 'friends_of_friends' | 'none'
+      }
 }
 
 export interface ChangePasswordReqBody {

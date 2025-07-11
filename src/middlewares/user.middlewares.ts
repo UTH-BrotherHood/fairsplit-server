@@ -198,6 +198,13 @@ export const updateProfileValidation = validate(
         errorMessage: USER_MESSAGES.USERNAME_LENGTH_MUST_BE_FROM_1_TO_50
       }
     },
+    email: {
+      optional: true,
+      isEmail: {
+        errorMessage: USER_MESSAGES.EMAIL_IS_INVALID
+      },
+      trim: true
+    },
     avatarUrl: {
       optional: true,
       isString: {
@@ -220,6 +227,32 @@ export const updateProfileValidation = validate(
       optional: true,
       isISO8601: {
         errorMessage: USER_MESSAGES.DATE_OF_BIRTH_MUST_BE_ISO8601
+      }
+    },
+    privacySettings: {
+      optional: true,
+      custom: {
+        options: (value) => {
+          if (typeof value === 'string') {
+            try {
+              JSON.parse(value)
+              return true
+            } catch {
+              throw new Error('Privacy settings must be valid JSON')
+            }
+          } else if (typeof value === 'object' && value !== null) {
+            // Validate object structure
+            if (value.profileVisibility && !['public', 'friends', 'private'].includes(value.profileVisibility)) {
+              throw new Error(USER_MESSAGES.INVALID_PROFILE_VISIBILITY)
+            }
+            if (value.friendRequests && !['everyone', 'friends_of_friends', 'none'].includes(value.friendRequests)) {
+              throw new Error(USER_MESSAGES.INVALID_FRIEND_REQUESTS_SETTING)
+            }
+            return true
+          } else {
+            throw new Error('Privacy settings must be a string or object')
+          }
+        }
       }
     }
   })

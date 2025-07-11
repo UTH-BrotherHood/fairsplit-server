@@ -34,9 +34,35 @@ class UserController {
 
   async updateMe(req: Request<ParamsDictionary, any, UpdateMeReqBody>, res: Response) {
     const { userId } = req.decodedAuthorization as TokenPayload
-    const result = await userService.updateMe(userId, req.body)
+
+    // Prepare update data
+    const updateData = { ...req.body }
+
+    // Handle avatar upload if present
+    const avatarUrl = (req as any).fileUrl || (req as any).body.avatarUrl
+    if (avatarUrl) {
+      updateData.avatarUrl = avatarUrl
+    }
+
+    // Handle privacySettings if present
+    if (updateData.privacySettings) {
+      if (typeof updateData.privacySettings === 'string') {
+        try {
+          updateData.privacySettings = JSON.parse(updateData.privacySettings)
+        } catch (error) {
+          throw new Error(USER_MESSAGES.INVALID_PRIVACY_SETTINGS_FORMAT)
+        }
+      }
+      // If it's already an object, no need to parse
+    }
+
+    const result = await userService.updateMe(userId, updateData)
+
+    // Choose appropriate message based on what was updated
+    const message = avatarUrl ? USER_MESSAGES.UPDATE_AVATAR_SUCCESSFULLY : USER_MESSAGES.UPDATE_ME_SUCCESSFULLY
+
     new OK({
-      message: USER_MESSAGES.UPDATE_ME_SUCCESSFULLY,
+      message: message,
       data: result
     }).send(res)
   }
