@@ -139,6 +139,14 @@ class AdminController {
     }).send(res)
   }
 
+  async getProjectUsage(req: Request, res: Response) {
+    const usage = await adminService.getProjectUsage()
+    return new OK({
+      message: 'Get project usage successfully',
+      data: usage
+    }).send(res)
+  }
+
   // Transaction Management
   async getAllTransactions(req: Request<ParamsDictionary, unknown, unknown, TransactionFilterReqQuery>, res: Response) {
     const { page = 1, limit = 10, startDate, endDate, type, status } = req.query

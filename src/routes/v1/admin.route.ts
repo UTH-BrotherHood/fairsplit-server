@@ -63,6 +63,7 @@ adminRoute.put(
   wrapRequestHandler(adminController.updateProjectStatus)
 )
 adminRoute.post('/project/backup', adminAccessTokenValidation, wrapRequestHandler(adminController.createSystemBackup))
+adminRoute.get('/project/usage', adminAccessTokenValidation, wrapRequestHandler(adminController.getProjectUsage))
 
 /* ========================SYSTEM MONITORING ROUTES======================== */
 adminRoute.get(

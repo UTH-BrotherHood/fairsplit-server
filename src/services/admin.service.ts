@@ -771,6 +771,23 @@ class AdminService {
     }
   }
 
+  async getProjectUsage() {
+    const [userCount, groupCount, billCount, shoppingListCount, transactionCount] = await Promise.all([
+      databaseServices.users.countDocuments({}),
+      databaseServices.groups.countDocuments({}),
+      databaseServices.bills.countDocuments({}),
+      databaseServices.shoppingLists.countDocuments({}),
+      databaseServices.transactions.countDocuments({})
+    ])
+    return {
+      userCount,
+      groupCount,
+      billCount,
+      shoppingListCount,
+      transactionCount
+    }
+  }
+
   // Transaction Management
   async getTransactionHistory(
     paginationQuery: PaginationQuery & { startDate?: string; endDate?: string; type?: string; status?: string }
